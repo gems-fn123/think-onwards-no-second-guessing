@@ -19,19 +19,56 @@ from typing import Dict
 
 import numpy as np
 
-from . import config
+from . import config, curve_mapping
 from .ingest import WellRecord
 from .petrophysics import PetroResult
 from .qc import QCResult
 
 
+def _raw_oob_fraction(rec: WellRecord) -> float:
+    """
+    Fraction of depth samples where any primary RAW measurement is physically
+    impossible (outside HARD_BOUNDS). Uses ungated curves so baked-in violations
+    are seen. This is the cleanest honeypot signature in the dataset.
+    """
+    raw = curve_mapping.build_canonical_curves(rec.curves, rec.units)  # no range gating
+    n = rec.n_rows
+    viol = np.zeros(n)
+    valid = np.zeros(n, dtype=bool)
+    for fam, (lo, hi) in config.HARD_BOUNDS.items():
+        if fam not in raw:
+            continue
+        a = raw[fam]["values"]
+        m = np.isfinite(a)
+        valid[m] = True
+        viol[m & ((a < lo) | (a > hi))] += 1
+    if not valid.any():
+        return 0.0
+    return float(np.mean(viol[valid] > 0))
+
+
 @dataclass
 class HoneypotResult:
     well_id: str
-    score: float
-    is_honeypot: bool
+    score: float                 # weighted boolean-flag score (hard-veto logic)
+    is_honeypot: bool            # hard auto-veto only; global step may add more
+    suspicion: float = 0.0       # continuous rank key (hard score + severities)
+    hard_veto: bool = False      # a hard physics violation fired -> always veto
     flags: Dict[str, bool] = field(default_factory=dict)
     detail: Dict[str, float] = field(default_factory=dict)
+
+
+def _min_autocorr(rec: WellRecord) -> float:
+    """Minimum lag-1 autocorrelation across primary curves (low = noisy/suspect)."""
+    acs = []
+    for fam in ("RHOB", "NPHI", "GR", "DT"):
+        if fam not in rec.canonical:
+            continue
+        a = rec.canonical[fam]["values"]
+        x = a[np.isfinite(a)]
+        if x.size > 30 and np.std(x) > 1e-9:
+            acs.append(float(np.corrcoef(x[:-1], x[1:])[0, 1]))
+    return min(acs) if acs else 0.6
 
 
 def _pervasive(mask: np.ndarray, valid: np.ndarray) -> float:
@@ -95,18 +132,40 @@ def detect(
     # 8. Extreme washout (mild).
     flags["extreme_washout"] = bool(qc.flags.get("extreme_washout", False))
 
-    # Weighted score.
+    # 9. Raw out-of-range physics violations (hard auto-veto). Cleanest signature:
+    #    pervasively impossible raw measurements baked into the well.
+    oob_frac = _raw_oob_fraction(rec)
+    flags["raw_oob_violations"] = oob_frac > config.HONEYPOT_OOB_FRACTION
+    detail["raw_oob_fraction"] = oob_frac
+
+    # Weighted boolean score -> hard auto-veto.
     score = 0.0
     for name, on in flags.items():
         if on:
             score += config.HONEYPOT_FLAG_WEIGHTS.get(name, 0.0)
+    hard_veto = score >= config.HONEYPOT_SCORE_THRESHOLD
 
-    is_honeypot = score >= config.HONEYPOT_SCORE_THRESHOLD
+    # Continuous suspicion = boolean score + graded severities. Lets the global
+    # ranking step order the soft band (wells with no hard violation) so we can
+    # fill up to the known 25% honeypot base rate by suspicion, worst-first.
+    min_ac = _min_autocorr(rec)
+    detail["min_autocorr"] = min_ac
+    severity = (
+        2.0 * detail.get("raw_oob_fraction", 0.0)
+        + 2.0 * neg_frac
+        + 2.0 * imp_frac
+        + 1.0 * detail.get("rt_porosity_contradiction_fraction", 0.0)
+        + 1.0 * max(0.0, 0.60 - min_ac)          # noisy/discontinuous curves
+        + 0.5 * qc.washout_fraction
+    )
+    suspicion = score + severity
 
     return HoneypotResult(
         well_id=rec.well_id,
         score=round(score, 3),
-        is_honeypot=is_honeypot,
+        is_honeypot=hard_veto,
+        suspicion=round(suspicion, 4),
+        hard_veto=hard_veto,
         flags=flags,
         detail=detail,
     )
