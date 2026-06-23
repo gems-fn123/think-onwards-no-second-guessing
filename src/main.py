@@ -77,8 +77,13 @@ def main(argv: List[str] | None = None) -> int:
     ap.add_argument("--no-zip", action="store_true", help="skip building the submission zip")
     ap.add_argument("--honeypot-target", type=int, default=None,
                     help="override config.HONEYPOT_TARGET_COUNT (0 = hard vetoes only)")
+    ap.add_argument("--rw", type=float, default=None,
+                    help="override config.RW_DEFAULT (formation water resistivity) for SW")
     ap.add_argument("--tag", default="", help="suffix added to the submission zip name")
     args = ap.parse_args(argv)
+
+    if args.rw is not None:
+        config.RW_DEFAULT = args.rw   # affects SW (Axis 4) and thus pay (Axis 2)
 
     sub_dir = os.path.join(args.out, "submission_las")
     qc_dir = os.path.join(args.out, "qc_reports")
