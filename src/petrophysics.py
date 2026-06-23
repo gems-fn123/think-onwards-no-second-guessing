@@ -69,6 +69,10 @@ def _vsh_neutron_density(canonical: Dict[str, dict]) -> Optional[np.ndarray]:
 def compute_vsh(canonical: Dict[str, dict]) -> tuple[np.ndarray, str]:
     gr = canonical["GR"]["values"] if "GR" in canonical else None
     if gr is not None:
+        if getattr(config, "VSH_FIXED_ENDPOINTS", False):
+            # Match the answer-key standard workflow: fixed 20/120 GAPI endpoints.
+            gr_clean, gr_shale = config.VSH_GR_CLEAN, config.VSH_GR_SHALE
+            return np.clip((gr - gr_clean) / (gr_shale - gr_clean), 0.0, 1.0), "gr_fixed_20_120"
         gr_clean = _pct(gr, 5.0)
         gr_shale = _pct(gr, 95.0)
         if np.isfinite(gr_clean) and np.isfinite(gr_shale) and gr_shale - gr_clean >= 1e-6:

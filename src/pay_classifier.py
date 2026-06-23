@@ -58,7 +58,8 @@ def compute_apparent_pay(petro: PetroResult) -> tuple[np.ndarray, np.ndarray, fl
     c_vsh = vsh_use < config.PAY_VSH_MAX
     c_phie = phie > config.PAY_PHIE_MIN
     c_sw = sw < config.PAY_SW_MAX
-    c_perm = perm > config.PAY_PERM_MIN
+    # The answer-key standard workflow uses no permeability criterion.
+    c_perm = (perm > config.PAY_PERM_MIN) if getattr(config, "PAY_USE_PERM", True) else True
 
     apparent = (finite & c_vsh & c_phie & c_sw & c_perm).astype(np.int8)
 

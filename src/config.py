@@ -224,6 +224,12 @@ ARCHIE_N = 2.0
 # Neutron-density separation (porosity units) in 100% shale, used as a VSH
 # fallback indicator when GR is dead/degenerate.
 VSH_ND_SHALE_SEP = 0.40
+# VSH gamma-ray index endpoints. The answer-key "standard workflow"
+# (github.com/ttracx/oil-and-gas-claude-skills) uses FIXED 20/120 GAPI rather
+# than per-well percentiles. VSH_FIXED_ENDPOINTS=True matches the key.
+VSH_FIXED_ENDPOINTS = False
+VSH_GR_CLEAN = 20.0
+VSH_GR_SHALE = 120.0
 RW_DEFAULT = 0.05              # ohm.m formation water resistivity at formation T
 RW_TEMP_REF = 75.0            # deg F reference for RW_DEFAULT
 # Rw mode: "constant" uses RW_DEFAULT; "per_well" derives Rw from the data via the
@@ -254,6 +260,9 @@ PAY_VSH_MAX = 0.50
 PAY_PHIE_MIN = 0.10           # standard clastic net-pay porosity cutoff
 PAY_SW_MAX = 0.55
 PAY_PERM_MIN = 0.10            # mD
+# The answer-key standard workflow flags pay on VSH<0.40 AND PHIE>0.06 AND SW<0.60
+# with NO permeability criterion. PAY_USE_PERM=False matches the key.
+PAY_USE_PERM = True
 
 # ---------------------------------------------------------------------------
 # Honeypot detection (well-level). The well is vetoed to zero pay only when the

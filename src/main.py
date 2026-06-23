@@ -87,8 +87,21 @@ def main(argv: List[str] | None = None) -> int:
     ap.add_argument("--pay-phie-min", type=float, default=None, help="override PAY_PHIE_MIN")
     ap.add_argument("--pay-sw-max", type=float, default=None, help="override PAY_SW_MAX")
     ap.add_argument("--pay-vsh-max", type=float, default=None, help="override PAY_VSH_MAX")
+    ap.add_argument("--pay-no-perm", action="store_true", help="drop the permeability pay criterion (match key)")
+    ap.add_argument("--vsh-fixed", action="store_true", help="fixed 20/120 GAPI VSH endpoints (match key)")
+    ap.add_argument("--archie-a", type=float, default=None, help="override ARCHIE_A (key=0.62)")
+    ap.add_argument("--archie-m", type=float, default=None, help="override ARCHIE_M (key=2.15)")
     ap.add_argument("--tag", default="", help="suffix added to the submission zip name")
     args = ap.parse_args(argv)
+
+    if args.pay_no_perm:
+        config.PAY_USE_PERM = False
+    if args.vsh_fixed:
+        config.VSH_FIXED_ENDPOINTS = True
+    if args.archie_a is not None:
+        config.ARCHIE_A = args.archie_a
+    if args.archie_m is not None:
+        config.ARCHIE_M = args.archie_m
 
     if args.rw is not None:
         config.RW_DEFAULT = args.rw   # affects SW (Axis 4) and thus pay (Axis 2)
