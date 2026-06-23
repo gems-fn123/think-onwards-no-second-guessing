@@ -193,6 +193,11 @@ RHO_MA_LIMESTONE = 2.71
 RHO_MA_DOLOMITE = 2.87
 RHO_MA_DEFAULT = 2.65
 RHO_FLUID = 1.0                # fresh-to-moderate mud filtrate
+# The challenge states a CLASTIC reservoir. Forcing sandstone matrix everywhere:
+# PE-based dolomite picks were inflating PHID by ~0.13 v/v (4x the 0.03 scoring
+# tolerance) on ~185 wells, zeroing their curve-accuracy score. Keep PE for QC,
+# not for matrix selection.
+FORCE_SANDSTONE_MATRIX = True
 # PE-based matrix selection thresholds (b/e): sandstone ~1.8, limestone ~5, dolomite ~3.
 PE_SAND_MAX = 2.5
 PE_DOLO_MAX = 4.0
@@ -239,8 +244,8 @@ PERM_MAX = 20000.0
 # verdict. These are the primary knobs for leaderboard tuning.
 # ---------------------------------------------------------------------------
 PAY_VSH_MAX = 0.50
-PAY_PHIE_MIN = 0.08
-PAY_SW_MAX = 0.60
+PAY_PHIE_MIN = 0.10           # standard clastic net-pay porosity cutoff
+PAY_SW_MAX = 0.55
 PAY_PERM_MIN = 0.10            # mD
 
 # ---------------------------------------------------------------------------
@@ -249,11 +254,19 @@ PAY_PERM_MIN = 0.10            # mD
 # not zeroed (protects the pay axis).
 # ---------------------------------------------------------------------------
 HONEYPOT_SCORE_THRESHOLD = 3.0     # sum of weighted flags above which we veto
+
+# Global selection: the dataset is exactly 25% honeypots (200/800). After hard
+# auto-vetoes, fill the honeypot set up to this count using the continuous
+# suspicion ranking (worst-first). Set to 0 to disable global fill and use only
+# hard vetoes. This is the main A3 knob — A3 = 100*(caught/200)^2, so recall
+# toward 200 is the single biggest score lever.
+HONEYPOT_TARGET_COUNT = 200
 # Weights are tiered. A "hard" physics violation (no real log can show it) is
 # weighted at the threshold so any single one vetoes the well. "Medium" signals
 # need to co-occur; "soft" signals only nudge. This is the main honeypot knob.
 HONEYPOT_FLAG_WEIGHTS = {
     # --- hard physics violations (auto-veto) ---
+    "raw_oob_violations": 3.0,           # raw measurements physically impossible
     "neg_porosity_pervasive": 3.0,       # density > matrix over much of the well
     "impossible_porosity_pervasive": 3.0,# raw porosity > physical max over much of well
     "density_neutron_impossible": 3.0,   # huge unphysical D-N separation everywhere
@@ -267,6 +280,22 @@ HONEYPOT_FLAG_WEIGHTS = {
 }
 # Raw porosity above this fraction is not physically reachable in rock.
 IMPOSSIBLE_POROSITY = 0.55
+
+# Raw out-of-range physics violations (the cleanest honeypot signature: ~72 wells
+# have pervasively impossible raw measurements vs ~0 for real wells). Bounds are
+# HARD physical limits (wider than the QC gating ranges) so only true
+# impossibilities count. A well with > HONEYPOT_OOB_FRACTION of samples violating
+# is auto-vetoed.
+HARD_BOUNDS = {
+    "RHOB": (1.0, 3.05),
+    "NPHI": (-0.02, 1.0),
+    "GR": (0.0, 300.0),
+    "DT": (30.0, 250.0),
+    "PE": (0.0, 15.0),
+    "RT": (0.0, 1.0e6),
+    "RXO": (0.0, 1.0e6),
+}
+HONEYPOT_OOB_FRACTION = 0.05
 
 # Fraction of valid samples that must violate a rule for it to count as
 # "pervasive" (a few bad samples are normal in real logs).

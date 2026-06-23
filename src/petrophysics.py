@@ -89,6 +89,8 @@ def compute_vsh(canonical: Dict[str, dict]) -> tuple[np.ndarray, str]:
 # Matrix density from PE
 # ---------------------------------------------------------------------------
 def _matrix_density(canonical: Dict[str, dict]) -> float:
+    if getattr(config, "FORCE_SANDSTONE_MATRIX", False):
+        return config.RHO_MA_SANDSTONE
     if "PE" not in canonical:
         return config.RHO_MA_DEFAULT
     pe_med = _pct(canonical["PE"]["values"], 50.0)

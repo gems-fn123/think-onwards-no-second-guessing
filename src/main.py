@@ -33,45 +33,39 @@ DEFAULT_RAW = os.path.join(ROOT, "data", "raw_las")
 DEFAULT_OUT = os.path.join(ROOT, "outputs")
 
 
-def process_well(path: str):
-    """Run the full pipeline for one well. Returns (new_curves, log_row, well_validation)."""
+def analyze_well(path: str) -> Dict:
+    """
+    Phase-1 analysis for one well: compute curves + apparent pay + honeypot
+    suspicion. Does NOT finalize pay or write — the global honeypot selection
+    (which needs all wells ranked together) happens between phases.
+    """
     rec = ingest.load_well(path)
     qc = qc_mod.run_qc(rec)
     petro = petrophysics.compute_all(rec, qc)
-
     apparent, conf, app_frac = pay_classifier.compute_apparent_pay(petro)
     hp = honeypot_detector.detect(rec, qc, petro, app_frac)
-    pay = pay_classifier.classify(petro, hp.is_honeypot)
+    return {"rec": rec, "qc": qc, "petro": petro, "hp": hp,
+            "apparent": apparent, "app_frac": app_frac}
 
-    new_curves = {
-        "VSH": petro.vsh,
-        "PHIT": petro.phit,
-        "PHIE": petro.phie,
-        "SW": petro.sw,
-        "PERM": petro.perm,
-        "PAY_FLAG": pay.pay_flag,
-    }
-    wv = validation.validate_curves(rec.well_id, new_curves)
 
-    log_row = {
-        "well_id": rec.well_id,
-        "n_rows": rec.n_rows,
-        "n_curves_in": rec.meta.get("n_curves"),
-        "families": "|".join(qc.families_present),
-        "vsh_method": petro.methods.get("vsh"),
-        "phit_method": petro.methods.get("phit"),
-        "sw_method": petro.methods.get("sw"),
-        "rho_ma": petro.diagnostics.get("rho_ma"),
-        "no_deep_res": qc.flags.get("no_deep_resistivity"),
-        "apparent_pay_frac": round(app_frac, 4),
-        "honeypot_score": hp.score,
-        "is_honeypot": hp.is_honeypot,
-        "honeypot_flags": "|".join(k for k, v in hp.flags.items() if v),
-        "final_pay_frac": round(pay.final_pay_fraction, 4),
-        "vetoed": pay.vetoed,
-        "violations": "; ".join(wv.violations),
-    }
-    return rec, new_curves, log_row, wv, qc, hp
+def select_honeypots(runs: List[Dict], target: int | None = None) -> set:
+    """
+    Global honeypot set = all hard auto-vetoes, then filled by descending
+    suspicion up to `target` (the known 25% base rate = 200). A3 is squared in
+    the caught fraction, so reaching the true count is the key lever.
+    """
+    hard = {j for j, r in enumerate(runs) if r["hp"].hard_veto}
+    if target is None:
+        target = int(getattr(config, "HONEYPOT_TARGET_COUNT", 0) or 0)
+    target = int(target or 0)
+    honey = set(hard)
+    if target > len(honey):
+        order = sorted(range(len(runs)), key=lambda j: -runs[j]["hp"].suspicion)
+        for j in order:
+            if len(honey) >= target:
+                break
+            honey.add(j)
+    return honey, hard
 
 
 def main(argv: List[str] | None = None) -> int:
@@ -81,6 +75,9 @@ def main(argv: List[str] | None = None) -> int:
     ap.add_argument("--limit", type=int, default=0, help="process only the first N wells (0 = all)")
     ap.add_argument("--roundtrip-sample", type=int, default=40, help="how many wells to round-trip check")
     ap.add_argument("--no-zip", action="store_true", help="skip building the submission zip")
+    ap.add_argument("--honeypot-target", type=int, default=None,
+                    help="override config.HONEYPOT_TARGET_COUNT (0 = hard vetoes only)")
+    ap.add_argument("--tag", default="", help="suffix added to the submission zip name")
     args = ap.parse_args(argv)
 
     sub_dir = os.path.join(args.out, "submission_las")
@@ -106,34 +103,77 @@ def main(argv: List[str] | None = None) -> int:
     errors: List[str] = []
     written_paths: List[str] = []
 
+    # ---- Phase 1: analyze every well (no writing yet) ----
+    runs: List[Dict] = []
     for i, path in enumerate(wells, 1):
         wid = os.path.splitext(os.path.basename(path))[0]
         try:
-            rec, new_curves, log_row, wv, qc, hp = process_well(path)
-            out_path = os.path.join(sub_dir, f"{wid}.las")
-            rows_written = las_writer.write_processed(rec, new_curves, out_path)
-            if rows_written != rec.n_rows:
-                log_row["violations"] = (log_row["violations"] + f"; rows_written={rows_written}/{rec.n_rows}").strip("; ")
-            written_paths.append(out_path)
-            log_rows.append(log_row)
-            well_validations.append(wv)
-            qc_rows.append({
-                "well_id": wid, "n_rows": qc.n_rows,
-                "families_present": "|".join(qc.families_present),
-                "families_missing": "|".join(qc.families_missing),
-                "dead_curves": "|".join(qc.dead_curves),
-                "washout_fraction": round(qc.washout_fraction, 3),
-                "notes": " ".join(qc.notes),
-            })
-            hp_rows.append({
-                "well_id": wid, "score": hp.score, "is_honeypot": hp.is_honeypot,
-                "flags": "|".join(k for k, v in hp.flags.items() if v),
-            })
+            runs.append(analyze_well(path))
         except Exception as exc:  # never let one well abort the run
             errors.append(f"{wid}: {exc}")
             traceback.print_exc()
         if i % 100 == 0:
-            print(f"  {i}/{len(wells)} wells ({time.time()-t0:.0f}s)")
+            print(f"  analyzed {i}/{len(wells)} wells ({time.time()-t0:.0f}s)")
+
+    # ---- Global honeypot selection (needs all wells ranked together) ----
+    honey, hard = select_honeypots(runs, target=args.honeypot_target)
+    print(f"  honeypots: hard auto-veto={len(hard)}, total flagged={len(honey)} "
+          f"(target {getattr(config, 'HONEYPOT_TARGET_COUNT', 0)})")
+
+    # ---- Phase 2: finalize pay (apply veto), write, validate, log ----
+    for j, r in enumerate(runs):
+        rec, qc, petro, hp = r["rec"], r["qc"], r["petro"], r["hp"]
+        wid = rec.well_id
+        is_hp = j in honey
+        final_pay, final_frac, vetoed = pay_classifier.finalize_pay(r["apparent"], is_hp)
+        new_curves = {
+            "VSH": petro.vsh, "PHIT": petro.phit, "PHIE": petro.phie,
+            "SW": petro.sw, "PERM": petro.perm, "PAY_FLAG": final_pay,
+        }
+        wv = validation.validate_curves(wid, new_curves)
+        out_path = os.path.join(sub_dir, f"{wid}.las")
+        try:
+            rows_written = las_writer.write_processed(rec, new_curves, out_path)
+            if rows_written != rec.n_rows:
+                wv.violations.append(f"rows_written={rows_written}/{rec.n_rows}")
+            written_paths.append(out_path)
+        except Exception as exc:
+            errors.append(f"{wid}: write failed: {exc}")
+            wv.violations.append(f"write failed: {exc}")
+
+        well_validations.append(wv)
+        log_rows.append({
+            "well_id": wid, "n_rows": rec.n_rows,
+            "n_curves_in": rec.meta.get("n_curves"),
+            "families": "|".join(qc.families_present),
+            "vsh_method": petro.methods.get("vsh"),
+            "phit_method": petro.methods.get("phit"),
+            "sw_method": petro.methods.get("sw"),
+            "rho_ma": petro.diagnostics.get("rho_ma"),
+            "no_deep_res": qc.flags.get("no_deep_resistivity"),
+            "apparent_pay_frac": round(r["app_frac"], 4),
+            "honeypot_score": hp.score,
+            "honeypot_suspicion": hp.suspicion,
+            "is_honeypot": is_hp,
+            "veto_reason": ("hard" if hp.hard_veto else ("fill" if is_hp else "")),
+            "honeypot_flags": "|".join(k for k, v in hp.flags.items() if v),
+            "final_pay_frac": round(final_frac, 4),
+            "vetoed": vetoed,
+            "violations": "; ".join(wv.violations),
+        })
+        qc_rows.append({
+            "well_id": wid, "n_rows": qc.n_rows,
+            "families_present": "|".join(qc.families_present),
+            "families_missing": "|".join(qc.families_missing),
+            "dead_curves": "|".join(qc.dead_curves),
+            "washout_fraction": round(qc.washout_fraction, 3),
+            "notes": " ".join(qc.notes),
+        })
+        hp_rows.append({
+            "well_id": wid, "score": hp.score, "suspicion": hp.suspicion,
+            "is_honeypot": is_hp, "hard_veto": hp.hard_veto,
+            "flags": "|".join(k for k, v in hp.flags.items() if v),
+        })
 
     elapsed = time.time() - t0
     print(f"Processed {len(written_paths)} wells in {elapsed:.0f}s ({len(errors)} errors)")
@@ -178,7 +218,8 @@ def main(argv: List[str] | None = None) -> int:
 
     # ---- build submission zip ----
     if not args.no_zip and written_paths:
-        zip_path = os.path.join(args.out, f"submission_{datetime.now().strftime('%Y%m%d')}.zip")
+        tag = f"_{args.tag}" if args.tag else ""
+        zip_path = os.path.join(args.out, f"submission_{datetime.now().strftime('%Y%m%d')}{tag}.zip")
         with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as zf:
             for p in sorted(written_paths):
                 zf.write(p, arcname=os.path.basename(p))
