@@ -84,6 +84,9 @@ def main(argv: List[str] | None = None) -> int:
     ap.add_argument("--decouple-pay", action="store_true",
                     help="freeze PAY_FLAG to the baseline-Rw SW while writing the new SW "
                          "(clean single-axis A4 probe)")
+    ap.add_argument("--pay-phie-min", type=float, default=None, help="override PAY_PHIE_MIN")
+    ap.add_argument("--pay-sw-max", type=float, default=None, help="override PAY_SW_MAX")
+    ap.add_argument("--pay-vsh-max", type=float, default=None, help="override PAY_VSH_MAX")
     ap.add_argument("--tag", default="", help="suffix added to the submission zip name")
     args = ap.parse_args(argv)
 
@@ -91,6 +94,14 @@ def main(argv: List[str] | None = None) -> int:
         config.RW_DEFAULT = args.rw   # affects SW (Axis 4) and thus pay (Axis 2)
     if args.rw_mode is not None:
         config.RW_MODE = args.rw_mode
+    # Pay-cutoff overrides — clean A2 sweeps (A4 is scored at the key's pay depths,
+    # independent of our PAY_FLAG; honeypots stay vetoed, so A3 is unaffected too).
+    if args.pay_phie_min is not None:
+        config.PAY_PHIE_MIN = args.pay_phie_min
+    if args.pay_sw_max is not None:
+        config.PAY_SW_MAX = args.pay_sw_max
+    if args.pay_vsh_max is not None:
+        config.PAY_VSH_MAX = args.pay_vsh_max
 
     sub_dir = os.path.join(args.out, "submission_las")
     qc_dir = os.path.join(args.out, "qc_reports")
