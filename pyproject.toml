@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "no-second-guessing-agent"
+version = "0.1.0"
+description = "Physics-first agentic petrophysical interpretation of raw LAS well logs (ThinkOnward 'No Second Guessing')."
+readme = "README.md"
+requires-python = ">=3.11"
+license = { file = "LICENSE" }
+dependencies = [
+    "lasio==0.32",
+    "numpy>=1.24",
+    "pandas>=2.0",
+]
+
+[project.scripts]
+nsg-run = "src.main:main"
+
+[tool.setuptools]
+packages = ["src"]

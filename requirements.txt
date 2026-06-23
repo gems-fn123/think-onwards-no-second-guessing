@@ -1,0 +1,5 @@
+# No Second Guessing — runtime dependencies
+# Pinned to the versions verified in this build (Python 3.11+; tested on 3.13).
+lasio==0.32
+numpy>=1.24
+pandas>=2.0

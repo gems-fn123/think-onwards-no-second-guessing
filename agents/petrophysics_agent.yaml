@@ -1,0 +1,75 @@
+# Declarative description of the petrophysics agent and its parameters.
+# The runtime reads constants from src/config.py; this file documents intent and
+# keeps the model assumptions reviewable in one place. Values mirror config.py.
+
+agent:
+  name: petrophysics-agent
+  kind: deterministic            # no LLM in the scored path
+  posture: balanced
+  units:
+    resistivity: ohm.m
+    density: g/cc
+    neutron: fraction
+    sonic: us/ft
+    caliper: inch
+  null_value: -999.25
+
+curve_families:                  # canonical family -> measurement (aliases in config.py)
+  GR:   gamma ray (VSH)
+  RHOB: bulk density
+  NPHI: neutron porosity
+  DT:   compressional slowness
+  RT:   deep resistivity (Archie Rt)
+  RXO:  shallow/invaded resistivity (Rt fallback)
+  PE:   photoelectric factor (matrix id)
+  CAL:  caliper / hole diameter
+  BIT:  bit size (washout reference)
+  SP:   spontaneous potential
+
+vsh:
+  method: gamma_ray_linear
+  clean_percentile: 5
+  shale_percentile: 95
+  fallback: neutron_density_separation   # when GR dead/missing
+  nd_shale_separation: 0.40
+
+phit:
+  hierarchy: [neutron_density, density, neutron, sonic, default]
+  component_clip: [0.0, 0.60]            # clip PHID/NPHI before blending
+  blend: arithmetic_mean
+  matrix_density_from_pe:
+    sandstone: 2.65
+    dolomite:  2.87
+    limestone: 2.71
+  fluid_density: 1.0
+  sonic: { dt_matrix: 55.5, dt_fluid: 189.0, compaction: 1.0 }
+  max: 0.45
+
+phie:
+  formula: PHIT * (1 - VSH)
+  constraint: 0 <= PHIE <= PHIT
+
+sw:
+  model: simandoux                       # reduces to Archie when VSH=0
+  archie: { a: 1.0, m: 2.0, n: 2.0 }
+  rw_default: 0.05
+  rw_temp_ref_degF: 75.0
+  shale_resistivity: 2.0
+  resistivity_fallback: RXO              # for wells with no deep curve
+
+perm:
+  model: timur_log_linear                # log10(k) = A + B*PHIE - C*VSH
+  A: -2.0
+  B: 16.0
+  C: 3.0
+  bounds: [0.0, 20000.0]
+
+pay:
+  logic: conjunction                     # all must hold AND well not honeypot
+  cutoffs: { vsh_max: 0.50, phie_min: 0.08, sw_max: 0.60, perm_min: 0.10 }
+
+honeypot:
+  veto_threshold: 3.0
+  hard_violations: [neg_porosity_pervasive, impossible_porosity_pervasive, density_neutron_impossible]
+  pervasive_fraction: 0.30
+  note: rails and drilling/decoy curves are NOT used as signals (generic artifacts)
