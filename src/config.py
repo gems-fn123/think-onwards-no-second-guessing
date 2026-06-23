@@ -226,6 +226,13 @@ ARCHIE_N = 2.0
 VSH_ND_SHALE_SEP = 0.40
 RW_DEFAULT = 0.05              # ohm.m formation water resistivity at formation T
 RW_TEMP_REF = 75.0            # deg F reference for RW_DEFAULT
+# Rw mode: "constant" uses RW_DEFAULT; "per_well" derives Rw from the data via the
+# Rwa-minimum (Pickett) estimator in clean low-VSH zones. The diagnostic showed
+# data-implied Rw ~0.14 (median) vs our 0.05 -> SW was too low (A4/A2 hit).
+RW_MODE = "constant"
+RW_MIN = 0.02                  # clamp band for per-well Rw estimate
+RW_MAX = 0.60
+RW_RWA_PERCENTILE = 10         # Rwa percentile taken as the Rw estimate
 USE_SIMANDOUX = True           # shaly-sand correction when VSH is significant
 RSH_DEFAULT = 2.0              # ohm.m shale resistivity for Simandoux
 

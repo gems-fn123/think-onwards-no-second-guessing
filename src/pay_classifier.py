@@ -40,7 +40,9 @@ def _sigmoid(x: np.ndarray) -> np.ndarray:
 def compute_apparent_pay(petro: PetroResult) -> tuple[np.ndarray, np.ndarray, float]:
     vsh = petro.vsh
     phie = petro.phie
-    sw = petro.sw
+    # Use the frozen baseline SW for the pay decision when a decoupled probe is
+    # active (so PAY_FLAG matches the baseline while the OUTPUT SW differs).
+    sw = petro.sw_for_pay if petro.sw_for_pay is not None else petro.sw
     perm = petro.perm
 
     n = phie.shape[0]

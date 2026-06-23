@@ -33,7 +33,7 @@ DEFAULT_RAW = os.path.join(ROOT, "data", "raw_las")
 DEFAULT_OUT = os.path.join(ROOT, "outputs")
 
 
-def analyze_well(path: str) -> Dict:
+def analyze_well(path: str, decouple_pay: bool = False) -> Dict:
     """
     Phase-1 analysis for one well: compute curves + apparent pay + honeypot
     suspicion. Does NOT finalize pay or write — the global honeypot selection
@@ -41,7 +41,7 @@ def analyze_well(path: str) -> Dict:
     """
     rec = ingest.load_well(path)
     qc = qc_mod.run_qc(rec)
-    petro = petrophysics.compute_all(rec, qc)
+    petro = petrophysics.compute_all(rec, qc, decouple_pay=decouple_pay)
     apparent, conf, app_frac = pay_classifier.compute_apparent_pay(petro)
     hp = honeypot_detector.detect(rec, qc, petro, app_frac)
     return {"rec": rec, "qc": qc, "petro": petro, "hp": hp,
@@ -79,11 +79,18 @@ def main(argv: List[str] | None = None) -> int:
                     help="override config.HONEYPOT_TARGET_COUNT (0 = hard vetoes only)")
     ap.add_argument("--rw", type=float, default=None,
                     help="override config.RW_DEFAULT (formation water resistivity) for SW")
+    ap.add_argument("--rw-mode", choices=["constant", "per_well"], default=None,
+                    help="override config.RW_MODE: per_well derives Rw from the data")
+    ap.add_argument("--decouple-pay", action="store_true",
+                    help="freeze PAY_FLAG to the baseline-Rw SW while writing the new SW "
+                         "(clean single-axis A4 probe)")
     ap.add_argument("--tag", default="", help="suffix added to the submission zip name")
     args = ap.parse_args(argv)
 
     if args.rw is not None:
         config.RW_DEFAULT = args.rw   # affects SW (Axis 4) and thus pay (Axis 2)
+    if args.rw_mode is not None:
+        config.RW_MODE = args.rw_mode
 
     sub_dir = os.path.join(args.out, "submission_las")
     qc_dir = os.path.join(args.out, "qc_reports")
@@ -113,7 +120,7 @@ def main(argv: List[str] | None = None) -> int:
     for i, path in enumerate(wells, 1):
         wid = os.path.splitext(os.path.basename(path))[0]
         try:
-            runs.append(analyze_well(path))
+            runs.append(analyze_well(path, decouple_pay=args.decouple_pay))
         except Exception as exc:  # never let one well abort the run
             errors.append(f"{wid}: {exc}")
             traceback.print_exc()
@@ -155,6 +162,7 @@ def main(argv: List[str] | None = None) -> int:
             "phit_method": petro.methods.get("phit"),
             "sw_method": petro.methods.get("sw"),
             "rho_ma": petro.diagnostics.get("rho_ma"),
+            "rw_value": round(petro.diagnostics.get("rw_value", config.RW_DEFAULT), 4),
             "no_deep_res": qc.flags.get("no_deep_resistivity"),
             "apparent_pay_frac": round(r["app_frac"], 4),
             "honeypot_score": hp.score,

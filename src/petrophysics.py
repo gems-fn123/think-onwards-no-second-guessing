@@ -35,6 +35,9 @@ class PetroResult:
     # pre-clamp arrays kept for the honeypot auditor
     phit_raw: Optional[np.ndarray] = None
     phie_raw: Optional[np.ndarray] = None
+    # When set, pay is decided from THIS SW (frozen baseline) while the OUTPUT sw
+    # uses a different (e.g. per-well) Rw. Enables clean single-axis A4 probes.
+    sw_for_pay: Optional[np.ndarray] = None
 
 
 def _pct(arr: np.ndarray, q: float) -> float:
@@ -168,22 +171,48 @@ def compute_phie(phit: np.ndarray, vsh: Optional[np.ndarray]) -> tuple[np.ndarra
 # ---------------------------------------------------------------------------
 # SW (Archie / Simandoux)
 # ---------------------------------------------------------------------------
-def _rw(canonical: Dict[str, dict], n_rows: int) -> np.ndarray:
-    rw = np.full(n_rows, config.RW_DEFAULT, dtype=float)
-    if "TEMP" in canonical:
+def _rw(canonical: Dict[str, dict], n_rows: int, rw_base: Optional[float] = None) -> np.ndarray:
+    base = config.RW_DEFAULT if rw_base is None else float(rw_base)
+    rw = np.full(n_rows, base, dtype=float)
+    if rw_base is None and "TEMP" in canonical:
+        # Arps temperature correction only for the regional-default path; a
+        # data-derived per-well Rw already reflects formation conditions.
         temp = canonical["TEMP"]["values"]
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", category=RuntimeWarning)
-            # Arps temperature correction (deg F).
             rw = config.RW_DEFAULT * (config.RW_TEMP_REF + 6.77) / (temp + 6.77)
         rw[~np.isfinite(rw)] = config.RW_DEFAULT
     return rw
+
+
+def estimate_rw_per_well(canonical: Dict[str, dict], phit: np.ndarray, vsh: np.ndarray) -> float:
+    """
+    Data-derived Rw via the Rwa-minimum (Pickett) estimator: in clean, low-VSH
+    zones Rwa = Rt * PHIT^m / a approaches Rw. We take a low percentile of Rwa
+    over clean samples as the well's Rw, clamped to a sane band. Returns
+    RW_DEFAULT when there is no deep resistivity or too few clean samples.
+    """
+    if "RT" not in canonical:
+        return config.RW_DEFAULT
+    rt = canonical["RT"]["values"]
+    a, m = config.ARCHIE_A, config.ARCHIE_M
+    vsh_use = np.zeros_like(phit) if vsh is None else vsh
+    mask = (np.isfinite(rt) & (rt > 0) & np.isfinite(phit) & (phit > 0.05)
+            & np.isfinite(vsh_use) & (vsh_use < 0.30))
+    if mask.sum() < 20:
+        return config.RW_DEFAULT
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", category=RuntimeWarning)
+        rwa = rt[mask] * np.power(phit[mask], m) / a
+    rw = float(np.nanpercentile(rwa, config.RW_RWA_PERCENTILE))
+    return float(np.clip(rw, config.RW_MIN, config.RW_MAX))
 
 
 def compute_sw(
     canonical: Dict[str, dict],
     phie: np.ndarray,
     vsh: Optional[np.ndarray],
+    rw_value: Optional[float] = None,
 ) -> tuple[np.ndarray, str]:
     rt_source = "RT" if "RT" in canonical else ("RXO" if "RXO" in canonical else None)
     if rt_source is None:
@@ -192,7 +221,7 @@ def compute_sw(
         return np.where(np.isfinite(phie), 1.0, np.nan), "no_resistivity_wet"
 
     rt = canonical[rt_source]["values"]
-    rw = _rw(canonical, phie.shape[0])
+    rw = _rw(canonical, phie.shape[0], rw_base=rw_value)
     a, m, n = config.ARCHIE_A, config.ARCHIE_M, config.ARCHIE_N
     vsh_use = np.zeros_like(phie) if vsh is None else np.nan_to_num(vsh, nan=0.0)
 
@@ -240,7 +269,7 @@ def compute_perm(phie: np.ndarray, vsh: Optional[np.ndarray]) -> np.ndarray:
 # ---------------------------------------------------------------------------
 # Orchestration
 # ---------------------------------------------------------------------------
-def compute_all(rec: WellRecord, qc: QCResult) -> PetroResult:
+def compute_all(rec: WellRecord, qc: QCResult, decouple_pay: bool = False) -> PetroResult:
     canonical = rec.canonical
     n = rec.n_rows
 
@@ -251,7 +280,19 @@ def compute_all(rec: WellRecord, qc: QCResult) -> PetroResult:
 
     phit, phit_raw, phit_method, rho_ma, neg_density_frac = compute_phit(canonical)
     phie, phie_raw = compute_phie(phit, vsh)
-    sw, sw_method = compute_sw(canonical, phie, vsh)
+
+    # Output SW uses the configured Rw (regional default or data-derived per-well).
+    rw_value = None
+    if getattr(config, "RW_MODE", "constant") == "per_well":
+        rw_value = estimate_rw_per_well(canonical, phit, vsh)
+    sw, sw_method = compute_sw(canonical, phie, vsh, rw_value=rw_value)
+
+    # Decoupled probe: decide pay from the FROZEN baseline SW (regional Rw) while
+    # the written SW above uses the new Rw. Pins A2/A3 so only A4 moves.
+    sw_for_pay = None
+    if decouple_pay and rw_value is not None:
+        sw_for_pay, _ = compute_sw(canonical, phie, vsh, rw_value=None)
+
     perm = compute_perm(phie, vsh)
 
     # Diagnostics for the honeypot auditor.
@@ -262,6 +303,7 @@ def compute_all(rec: WellRecord, qc: QCResult) -> PetroResult:
         "neg_porosity_fraction": neg_density_frac,
         "n_valid_phit": int(valid.sum()),
     }
+    diagnostics["rw_value"] = rw_value if rw_value is not None else config.RW_DEFAULT
     methods = {
         "vsh": vsh_method,
         "phit": phit_method,
@@ -278,4 +320,5 @@ def compute_all(rec: WellRecord, qc: QCResult) -> PetroResult:
         diagnostics=diagnostics,
         phit_raw=phit_raw,
         phie_raw=phie_raw,
+        sw_for_pay=sw_for_pay,
     )

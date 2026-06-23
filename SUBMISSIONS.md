@@ -30,21 +30,24 @@ Public leaderboard scores per submission. Scoring = geometric mean of 4 axes
   guesses → sweep RW (0.03 / 0.05 / 0.08).
 - A2: pay footage still ~0.24 on real wells → may still overpredict.
 
-## Candidates queued (awaiting score)
+## Active candidates (pre-registered, awaiting score)
 
-Marginal-band check: suspicion rank 200–250 has higher apparent pay (0.31) than
-rank 135–200 (0.19) → overshoot past 200 starts zeroing wells that look like real
-pay (A2 risk). So 200 (= known honeypot count) is likely near-optimal on count;
-priority shifts to A4 (Rw) and ranking precision.
+After the data-scientist review + targeted diagnostics (see DECISION_QUALITY.md):
+the binding axes are A2/A4 (likely single digits), not honeypot count. Data-implied
+Rw ≈ 0.14 vs our 0.05. Blind global-Rw and severity-overshoot zips were CLEANED
+(superseded — see below).
 
-Recommended submit order:
+| # | zip | change vs iter3 (B=21.22) | axis moved | pre-registered acceptance |
+|---|-----|---------------------------|-----------|---------------------------|
+| **S1** | submission_20260623_S1_rwperwell_decoupled.zip | per-well data-derived Rw on OUTPUT SW; **PAY_FLAG frozen = iter3** (verified byte-identical) | **A4 only** | `(T_S1/21.22)^4` = A4 ratio. Expect T_S1 > 21.22 (Rw 0.05→~0.14 fixes SW). If ≤, Rwa prior wrong or SW not the A4 floor. |
+| **S2** | submission_20260623_S2_rwperwell_coupled.zip | per-well Rw drives SW **and** pay (pay 0.24→0.16) | A4 + A2 | Expect T_S2 ≥ S1 if overprediction was also hurting A2. If T_S2 < S1, pay cut too far. |
 
-| priority | zip | change vs iter3 | hypothesis |
-|---------:|-----|-----------------|-----------|
-| 1 | submission_20260623_iter5_rw0.03.zip | RW 0.05→0.03 (SW↓, pay 0.24→0.28) | A4: truth SW may be lower |
-| 1 | submission_20260623_iter5_rw0.08.zip | RW 0.05→0.08 (SW↑, pay 0.24→0.20) | A4: truth SW may be higher |
-| 3 | submission_20260623_iter4_top250.zip | flag 200→250 | overshoot (likely marginal/neg) |
-| 4 | submission_20260623_iter4_top300.zip | flag 200→300 | overshoot upper bound |
+Submit **S1 first** (clean A4 read), then **S2**. The pair separates the A4 gain
+(S1) from the additional A2 effect of the resulting pay reduction (S2 vs S1).
 
-After Rw direction is known: refine net-pay cutoffs (A2) and add discriminative
-physics features to lift suspicion-ranking precision (A3 without raising count).
+### Cleaned (removed) — superseded, do not submit
+- iter5_rw0.03 / iter5_rw0.08 — blind GLOBAL Rw guesses; replaced by per-well data-derived Rw (S1/S2).
+- iter4_top250 / iter4_top300 — blind severity-rank overshoot; marginal-band analysis says count ≈200 is near-optimal; future overshoot (S4) will use residual ranking, not severity.
+
+### Retained
+- iter2_hard135 (17.82) and iter3_top200 (21.22) — scored anchors / current baseline B.
