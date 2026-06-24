@@ -158,6 +158,42 @@ def compute_phit(canonical: Dict[str, dict]) -> tuple[np.ndarray, np.ndarray, st
     return phit, phit_raw, method, rho_ma, neg_density_frac
 
 
+def compute_phit_alt(canonical: Dict[str, dict], mode: str) -> Optional[np.ndarray]:
+    """
+    Alternate total-porosity estimators for clean A4-isolation probes.
+
+    The default PHIT (compute_phit) is the clipped arithmetic mean of density and
+    neutron porosity. At gas/light-oil pay — exactly where the key's scored pay
+    depths sit — the neutron reads suppressed, so the mean under-reads true
+    porosity by up to the 0.03 PHIE tolerance. These modes test that:
+      * "density": density porosity only (drops the neutron averaging).
+      * "rms"    : gas-corrected RMS, sqrt(mean(PHID^2, NPHI^2)).
+    Returns a clipped PHIT array, or None if no porosity source exists.
+    """
+    rho_ma = _matrix_density(canonical)
+    lo, hi = config.ND_COMPONENT_CLIP
+    phid = nphi = None
+    if "RHOB" in canonical:
+        phid = np.clip((rho_ma - canonical["RHOB"]["values"]) / (rho_ma - config.RHO_FLUID), lo, hi)
+    if "NPHI" in canonical:
+        nphi = np.clip(canonical["NPHI"]["values"], lo, hi)
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", category=RuntimeWarning)
+        if mode == "density":
+            raw = phid if phid is not None else nphi
+        elif mode == "rms":
+            comps = [c for c in (phid, nphi) if c is not None]
+            raw = (np.sqrt(np.nanmean(np.vstack([np.square(c) for c in comps]), axis=0))
+                   if comps else None)
+        else:
+            raise ValueError(f"unknown phit alt mode: {mode!r}")
+
+    if raw is None:
+        return None
+    return np.clip(np.asarray(raw, dtype=float), 0.0, config.PHIT_MAX)
+
+
 # ---------------------------------------------------------------------------
 # PHIE
 # ---------------------------------------------------------------------------
@@ -268,6 +304,24 @@ def compute_perm(phie: np.ndarray, vsh: Optional[np.ndarray]) -> np.ndarray:
     # NULL where porosity is missing, so PERM mirrors the porosity null pattern.
     perm = np.where(np.isfinite(phie), perm, np.nan)
     return perm
+
+
+def compute_perm_timur(phie: np.ndarray, sw: np.ndarray) -> np.ndarray:
+    """
+    Classic Timur (1968) permeability, a clean A4-isolation probe for PERM:
+        k = 0.136 * PHI%^4.4 / Sw%^2   (PHI, Sw in percent; k in mD)
+    using SW as a proxy for irreducible saturation. The default PERM is a
+    log-linear form in PHIE/VSH; this tests whether the key's PERM sits closer to
+    the textbook Timur. PERM's A4 tolerance is wide (~0.5 log), so this is the
+    lower-information of the two A4 probes — run it only after the PHIE probe.
+    """
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", category=RuntimeWarning)
+        phi_pct = np.clip(phie, 0.0, None) * 100.0
+        sw_pct = np.clip(sw, 0.05, 1.0) * 100.0
+        k = 0.136 * np.power(phi_pct, 4.4) / np.square(sw_pct)
+    perm = np.clip(k, config.PERM_MIN, config.PERM_MAX)
+    return np.where(np.isfinite(phie) & np.isfinite(sw), perm, np.nan)
 
 
 # ---------------------------------------------------------------------------

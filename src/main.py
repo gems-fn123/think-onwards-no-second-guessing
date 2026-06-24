@@ -91,6 +91,12 @@ def main(argv: List[str] | None = None) -> int:
     ap.add_argument("--vsh-fixed", action="store_true", help="fixed 20/120 GAPI VSH endpoints (match key)")
     ap.add_argument("--archie-a", type=float, default=None, help="override ARCHIE_A (key=0.62)")
     ap.add_argument("--archie-m", type=float, default=None, help="override ARCHIE_M (key=2.15)")
+    ap.add_argument("--phie-out", choices=["effective", "density", "rms"], default="effective",
+                    help="A4 probe: overwrite ONLY the written PHIT/PHIE with density-only or "
+                         "gas-corrected RMS porosity (pay/SW/PERM stay baseline = clean A4-PHIE read)")
+    ap.add_argument("--perm-out", choices=["loglinear", "timur"], default="loglinear",
+                    help="A4 probe: overwrite ONLY the written PERM with a classic Timur estimate "
+                         "(pay stays baseline = clean A4-PERM read)")
     ap.add_argument("--tag", default="", help="suffix added to the submission zip name")
     args = ap.parse_args(argv)
 
@@ -166,6 +172,16 @@ def main(argv: List[str] | None = None) -> int:
             "VSH": petro.vsh, "PHIT": petro.phit, "PHIE": petro.phie,
             "SW": petro.sw, "PERM": petro.perm, "PAY_FLAG": final_pay,
         }
+        # --- A4 output-curve probes: swap ONLY the written curve. Pay was decided
+        # in phase 1 on the baseline petro, so A2/A3 stay pinned and only A4 moves.
+        if args.phie_out != "effective":
+            phit_alt = petrophysics.compute_phit_alt(rec.canonical, args.phie_out)
+            if phit_alt is not None:
+                phie_alt, _ = petrophysics.compute_phie(phit_alt, petro.vsh)
+                new_curves["PHIT"] = phit_alt
+                new_curves["PHIE"] = phie_alt
+        if args.perm_out != "loglinear":
+            new_curves["PERM"] = petrophysics.compute_perm_timur(petro.phie, petro.sw)
         wv = validation.validate_curves(wid, new_curves)
         out_path = os.path.join(sub_dir, f"{wid}.las")
         try:

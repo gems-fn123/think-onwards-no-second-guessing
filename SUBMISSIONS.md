@@ -84,3 +84,20 @@ the private holdout decides. Tie-break toward match-key.
 
 ### Cleaned (removed) — superseded by match-key
 - N1/N2 (tuned OUR sw cutoff, not the key's), S1 (A4-neutral probe, done), iter2 (early anchor; history in git).
+
+## A4 window — pre-registered (anchor B' = S2 = 22.48, per-well Rw)
+
+The M-factorial closed: A2 is plateauing (~21–22.5) and every gain so far was A2.
+The gap to the leaders (~37) is **A3/A4**. S1 already showed SW is A4-neutral, so the
+A4 floor is **PHIE and/or PERM**. This window opens A4 with clean output-curve probes
+(`--phie-out` / `--perm-out`): swap ONLY the written curve, pay decided in phase 1 on
+the baseline ⇒ A2/A3 pinned, only A4 moves. Identity `axis_ratio = (score/22.48)^4`.
+
+| slot | zip | change vs B' | isolates | footage | pre-registered read |
+|------|-----|--------------|----------|--------:|---------------------|
+| **1** | P1_phiedensity | written PHIE → density-only (drop neutron averaging) | **A4 (PHIE)** | =B' | gas effect suppresses NPHI at pay; mean under-reads φ near the 0.03 tol. **>22.8** → density φ matches key ⇒ PHIE was the A4 floor; adopt, sweep rms + matrix const next. **22.2–22.8** → A4-neutral (like SW); pivot to perm-timur. **<22.2** → effective φ right; revert. |
+| **2** | C2_rw_keypay_lowpay | key pay cutoffs + tighter SW | **A2** | 0.099 | **>22.8** → footage optimum <0.16, push lower. **22.0–22.8** → 0.10–0.16 plateau, A2 done. **<22.0** → overcut (dropped real pay); floor ≈0.16, C1's 0.146 ≈ optimum. |
+
+Held: C1_rw_keypay (0.146) — interpolated by C2; submit only if C2's read is ambiguous.
+Next window (reactive): if P1 wins, A4 sweep (rms, matrix/fluid const, perm-timur);
+if P1 is A4-neutral, perm-timur becomes the prime A4 probe.
