@@ -1,0 +1,224 @@
+{
+  "meta": {
+    "challenge": "ThinkOnward — No Second Guessing",
+    "prize": "$15,000",
+    "scoring": "geometric mean of 4 axes: A1 physics gate, A2 pay accuracy, A3 honeypot = 100*(caught/200)^2, A4 curve accuracy (PHIE tol 0.03 / SW 0.10 / PERM 0.5-log at the key's true pay depths)",
+    "leader_target": 37.0,
+    "ratio_identity": "axis_product_ratio = (score / anchor_score) ^ 4",
+    "findings": [
+      "Structural fixes drove 15.03 -> 22.48: sandstone matrix (un-zeroed A4 on 185 wells), honeypot recall -> 200 (A3 is squared), tighter pay (A2).",
+      "A3 honeypot = 100*(caught/200)^2 is the steepest lever; honeypots are geologically normal (decoys live in the curves, not metadata), so recall not precision is the knob.",
+      "S2 per-well Rw is best (22.48). S1 proved the SW change is A4-NEUTRAL -> the A4 floor is PHIE and/or PERM, not SW.",
+      "M-factorial closed: every gain so far is A2 (pay footage), and LESS footage wins (0.16 beats 0.24). Match-key formulas HURT (M3 ratio 0.98).",
+      "A2 is plateauing ~21-22.5. The gap to the leaders (~37) must come from A3 and A4 — A4 is the now-open lever."
+    ],
+    "next_action": "Submit P1 (A4-PHIE read) then C2 (A2-floor read); branch the next window off P1's result.",
+    "best_id": "S2",
+    "best_score": 22.48,
+    "updated": "2026-06-24 09:49"
+  },
+  "submissions": [
+    {
+      "id": "iter1",
+      "label": "baseline",
+      "date": "2026-06-22",
+      "status": "scored",
+      "score": 15.03,
+      "anchor": null,
+      "isolates": "—",
+      "footage": 0.32,
+      "change": "dolomite matrix on a clastic field; honeypot threshold 3.0",
+      "read": "Root cause of the low score: dolomite matrix zeroed A4 on 185 wells; honeypot recall far below 200.",
+      "_anchor_score": null,
+      "_ratio": null,
+      "_delta": null,
+      "_verdict": null
+    },
+    {
+      "id": "iter2",
+      "label": "hard135",
+      "date": "2026-06-23",
+      "status": "scored",
+      "score": 17.82,
+      "anchor": "iter1",
+      "isolates": "A4+A3+A2",
+      "footage": 0.26,
+      "change": "sandstone matrix + raw-OOB honeypot detector (61->135) + tighter pay",
+      "read": "+2.79 bundled structural fix.",
+      "_anchor_score": 15.03,
+      "_ratio": 1.976,
+      "_delta": 2.79,
+      "_verdict": "win"
+    },
+    {
+      "id": "iter3",
+      "label": "top200",
+      "date": "2026-06-23",
+      "status": "scored",
+      "score": 21.22,
+      "anchor": "iter2",
+      "isolates": "A3",
+      "footage": 0.24,
+      "change": "honeypot recall 135 -> 200 (the known 25% base rate)",
+      "read": "+3.40, biggest single gain. Confirms A3 (squared) dominates. Factorial anchor.",
+      "_anchor_score": 17.82,
+      "_ratio": 2.011,
+      "_delta": 3.4,
+      "_verdict": "win"
+    },
+    {
+      "id": "S1",
+      "label": "Rw decoupled probe",
+      "date": "2026-06-23",
+      "status": "scored",
+      "score": 21.2,
+      "anchor": "iter3",
+      "isolates": "A4 (SW)",
+      "footage": 0.24,
+      "change": "per-well Rw on the OUTPUT SW only; PAY_FLAG frozen = iter3",
+      "read": "Ratio ~1.00 -> the SW change is A4-NEUTRAL. SW is not the binding A4 curve.",
+      "_anchor_score": 21.22,
+      "_ratio": 0.996,
+      "_delta": -0.02,
+      "_verdict": "flat"
+    },
+    {
+      "id": "S2",
+      "label": "Rw per-well (coupled)",
+      "date": "2026-06-23",
+      "status": "scored",
+      "score": 22.48,
+      "anchor": "iter3",
+      "isolates": "A2",
+      "footage": 0.16,
+      "change": "per-well Rw drives SW and pay (footage 0.24 -> 0.16)",
+      "read": "+1.26 ratio. A4 is flat (S1), so the whole gain is A2: cutting pay overprediction. New baseline B'.",
+      "_anchor_score": 21.22,
+      "_ratio": 1.26,
+      "_delta": 1.26,
+      "_verdict": "win"
+    },
+    {
+      "id": "M1",
+      "label": "match-key full",
+      "date": "2026-06-23",
+      "status": "scored",
+      "score": 21.49,
+      "anchor": "iter3",
+      "isolates": "A2xA4",
+      "footage": 0.24,
+      "change": "key formulas + key pay cutoffs",
+      "read": "Ratio 1.05. Below S2 -> the documented key does not beat per-well Rw.",
+      "_anchor_score": 21.22,
+      "_ratio": 1.052,
+      "_delta": 0.27,
+      "_verdict": "win"
+    },
+    {
+      "id": "M2",
+      "label": "match-key pay only",
+      "date": "2026-06-23",
+      "status": "scored",
+      "score": 21.84,
+      "anchor": "iter3",
+      "isolates": "A2",
+      "footage": 0.24,
+      "change": "key pay cutoffs only (VSH<0.40, PHIE>0.06, SW<0.60, no PERM)",
+      "read": "Ratio 1.12 -> key pay cutoffs help A2 (Jaccard up).",
+      "_anchor_score": 21.22,
+      "_ratio": 1.122,
+      "_delta": 0.62,
+      "_verdict": "win"
+    },
+    {
+      "id": "M3",
+      "label": "match-key formulas",
+      "date": "2026-06-23",
+      "status": "scored",
+      "score": 21.13,
+      "anchor": "iter3",
+      "isolates": "A4",
+      "footage": 0.24,
+      "change": "key VSH 20/120 + Archie a=0.62, m=2.15",
+      "read": "Ratio 0.98 -> key formulas HURT curve accuracy. Drop.",
+      "_anchor_score": 21.22,
+      "_ratio": 0.983,
+      "_delta": -0.09,
+      "_verdict": "flat"
+    },
+    {
+      "id": "P1",
+      "label": "phie density",
+      "date": "2026-06-24",
+      "status": "queued",
+      "score": null,
+      "anchor": "S2",
+      "isolates": "A4 (PHIE)",
+      "footage": 0.16,
+      "change": "written PHIE from density porosity only (drop neutron averaging); pay/SW frozen on B'",
+      "rules": [
+        {
+          "if": "> 22.8",
+          "then": "Density porosity matches the key at pay depths -> PHIE WAS the A4 floor (neutron gas-suppression). Adopt density-out; sweep rms + matrix/fluid const next. Path to the leaders."
+        },
+        {
+          "if": "22.2 - 22.8",
+          "then": "A4-neutral, like SW in S1. PHIE is not the floor -> pivot to the PERM (Timur) probe."
+        },
+        {
+          "if": "< 22.2",
+          "then": "Effective PHIE was right; density-out is worse. Revert."
+        }
+      ],
+      "_anchor_score": 22.48,
+      "_ratio": null,
+      "_delta": null,
+      "_verdict": null
+    },
+    {
+      "id": "C2",
+      "label": "Rw + key pay + low footage",
+      "date": "2026-06-24",
+      "status": "queued",
+      "score": null,
+      "anchor": "S2",
+      "isolates": "A2",
+      "footage": 0.099,
+      "change": "per-well Rw + key pay cutoffs + tighter SW (footage 0.099)",
+      "rules": [
+        {
+          "if": "> 22.8",
+          "then": "Footage optimum is below 0.16 -> push lower next window."
+        },
+        {
+          "if": "22.0 - 22.8",
+          "then": "0.10-0.16 plateau -> A2 is done, stop cutting footage."
+        },
+        {
+          "if": "< 22.0",
+          "then": "Overcut (dropped real pay). Floor ~0.16; C1's 0.146 is near optimum."
+        }
+      ],
+      "_anchor_score": 22.48,
+      "_ratio": null,
+      "_delta": null,
+      "_verdict": null
+    },
+    {
+      "id": "C1",
+      "label": "Rw + key pay",
+      "date": "2026-06-24",
+      "status": "held",
+      "score": null,
+      "anchor": "S2",
+      "isolates": "A2",
+      "footage": 0.146,
+      "change": "per-well Rw + key pay cutoffs (footage 0.146)",
+      "read": "Held: interpolated by C2. Submit only if C2's read is ambiguous.",
+      "_anchor_score": 22.48,
+      "_ratio": null,
+      "_delta": null,
+      "_verdict": null
+    }
+  ]
+}
