@@ -12,10 +12,10 @@
       "A2 footage helps but is now SECONDARY: C3 0.062 = 24.4 (ratio 1.086), dwarfed by the A3 count lever. Footage ~peaked; the bigger pay lever is the NUMBER of paying wells, which the veto count controls.",
       "Answer key (ttracx well_log_interpreter SKILL.md): pay = Vsh<0.40 AND Sw<0.60 AND PHIE>0.06, NO PERM; Humble a=0.62/m=2.15/n=2, Rw=0.05, matrix 2.65/fluid 1.0. We KEEP our per-well Rw (beats static Rw on A2) + the key's cutoff structure; our SW cutoff is tuned for max depth-overlap, not the key's nominal 0.60."
     ],
-    "next_action": "NEXT WINDOW = 5 subs / 2h, best H3=29.91, count curve decelerating -> peak ~500-600. ORDER: (1) H4 hp500 [fill the missing point - never scored] (2) H5 hp600 [bracket]. Peak now known -> (3) CONS_<peak>_sw035 = best count x C3 footage (sw 0.35) = the new-high candidate; all 3 prebuilt (hp400/500/600 x sw035). (4) H6 hp700 only to confirm the A2 crater, else skip. (5) flex: push the winning combo further. Branch: H4<H3 -> peak 400 use CONS_H3; H5<H4 -> peak 500 use CONS_H4; both climb -> submit H6 + CONS_H5.",
-    "best_id": "H3",
-    "best_score": 29.91,
-    "updated": "2026-06-26 04:54"
+    "next_action": "H4 hp500 = 31.5 (climbing, +1.59 over H3; deltas +3.04/+2.00/+1.59 = decelerating). Best 31.5. NEXT: submit H5 hp600 [ready]; if >31.5 submit H6 hp700 [ready]. Then CONS_<peak>_sw035 = best count x C3 footage (sw 0.35) = new-high shot (hp500/600 variants prebuilt). Peak likely 600-700 then A2 craters (hp700 leaves only ~100 paying wells). Flex slot: push the winning count+footage combo further.",
+    "best_id": "H4",
+    "best_score": 31.5,
+    "updated": "2026-06-26 06:12"
   },
   "submissions": [
     {
@@ -320,8 +320,8 @@
       "id": "H4",
       "label": "honeypot count 500",
       "date": "2026-06-25",
-      "status": "queued",
-      "score": null,
+      "status": "scored",
+      "score": 31.5,
       "anchor": "C2",
       "isolates": "A3",
       "footage": 0.099,
@@ -337,9 +337,9 @@
         }
       ],
       "_anchor_score": 23.9,
-      "_ratio": null,
-      "_delta": null,
-      "_verdict": null
+      "_ratio": 3.018,
+      "_delta": 7.6,
+      "_verdict": "win"
     },
     {
       "id": "H5",
