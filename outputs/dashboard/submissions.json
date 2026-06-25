@@ -12,10 +12,10 @@
       "A2 footage helps but is now SECONDARY: C3 0.062 = 24.4 (ratio 1.086), dwarfed by the A3 count lever. Footage ~peaked; the bigger pay lever is the NUMBER of paying wells, which the veto count controls.",
       "Answer key (ttracx well_log_interpreter SKILL.md): pay = Vsh<0.40 AND Sw<0.60 AND PHIE>0.06, NO PERM; Humble a=0.62/m=2.15/n=2, Rw=0.05, matrix 2.65/fluid 1.0. We KEEP our per-well Rw (beats static Rw on A2) + the key's cutoff structure; our SW cutoff is tuned for max depth-overlap, not the key's nominal 0.60."
     ],
-    "next_action": "TODAY, 2 slots left: H3 hp400 then H4 hp500 -> bracket the A3 count peak (H1 250=24.87, H2 300=27.91, accelerating). Both at C2 footage (sw 0.45) so it is a clean count axis. If still climbing at 500 -> tomorrow push count further + build a real pay-presence detector (raise precision so A3->100 at lower A2 cost) + CONS (best footage x best count). If it peaks -> CONS the peak.",
-    "best_id": "H2",
-    "best_score": 27.91,
-    "updated": "2026-06-25 20:32"
+    "next_action": "TODAY (06-26), 5 slots: H3 hp400 = 29.91 (STILL climbing past H2's 27.91). Submit H4 hp500 (retry), then H5 hp600, H6 hp700 to find the A3 count peak. Likely peak ~500-600: hp700 flags 700/800 so only ~100 wells keep pay -> A2 should crater. Slot 5 = CONS (best count x C3 footage sw 0.35). Tomorrow: a real precision detector to catch all 200 honeypots with FEWER vetoed reals (A3->100 at higher A2) = the ceiling-raiser.",
+    "best_id": "H3",
+    "best_score": 29.91,
+    "updated": "2026-06-26 04:48"
   },
   "submissions": [
     {
@@ -291,8 +291,8 @@
       "id": "H3",
       "label": "honeypot count 400",
       "date": "2026-06-25",
-      "status": "queued",
-      "score": null,
+      "status": "scored",
+      "score": 29.91,
       "anchor": "C2",
       "isolates": "A3",
       "footage": 0.099,
@@ -312,9 +312,9 @@
         }
       ],
       "_anchor_score": 23.9,
-      "_ratio": null,
-      "_delta": null,
-      "_verdict": null
+      "_ratio": 2.453,
+      "_delta": 6.01,
+      "_verdict": "win"
     },
     {
       "id": "H4",
@@ -334,6 +334,56 @@
         {
           "if": "< H3",
           "then": "Peak is between 400 and 500; the A2 cost of vetoing ~300 reals overtakes A3. Lock count at the H3/H4 max."
+        }
+      ],
+      "_anchor_score": 23.9,
+      "_ratio": null,
+      "_delta": null,
+      "_verdict": null
+    },
+    {
+      "id": "H5",
+      "label": "honeypot count 600",
+      "date": "2026-06-26",
+      "status": "queued",
+      "score": null,
+      "anchor": "C2",
+      "isolates": "A3",
+      "footage": 0.099,
+      "change": "C2 A2-config + honeypot count -> 600 (flags 600/800; only ~200 wells keep pay)",
+      "rules": [
+        {
+          "if": "> H4",
+          "then": "Still climbing -> caught still short of 200 and the A2 cost of vetoing reals stays below the A3 gain. Try 700 (H6)."
+        },
+        {
+          "if": "< H4",
+          "then": "Past the peak -> vetoing ~465 reals now costs more A2 than A3 gains. Peak is 400-600; bisect."
+        }
+      ],
+      "_anchor_score": 23.9,
+      "_ratio": null,
+      "_delta": null,
+      "_verdict": null
+    },
+    {
+      "id": "H6",
+      "label": "honeypot count 700",
+      "date": "2026-06-26",
+      "status": "queued",
+      "score": null,
+      "anchor": "C2",
+      "isolates": "A3",
+      "footage": 0.099,
+      "change": "C2 A2-config + honeypot count -> 700 (only ~100 wells keep pay; A2 likely craters)",
+      "rules": [
+        {
+          "if": "> H5",
+          "then": "Astonishing -> true paying wells are very few; A3 dominates entirely (most of the 800 are honeypots/dry)."
+        },
+        {
+          "if": "< H5",
+          "then": "Confirms the peak is below 700; lock the count at the best of H3-H5."
         }
       ],
       "_anchor_score": 23.9,
