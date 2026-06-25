@@ -12,10 +12,10 @@
       "A2 is the LIVE lever and NOT plateaued: C2 footage 0.099 beat S2's 0.16 (+1.42 -> best 23.9, ratio 1.278). Tightening pay toward true footage keeps winning; bracket the peak.",
       "Answer key (ttracx well_log_interpreter SKILL.md): pay = Vsh<0.40 AND Sw<0.60 AND PHIE>0.06, NO PERM; Humble a=0.62/m=2.15/n=2, Rw=0.05, matrix 2.65/fluid 1.0. We KEEP our per-well Rw (beats static Rw on A2) + the key's cutoff structure; our SW cutoff is tuned for max depth-overlap, not the key's nominal 0.60."
     ],
-    "next_action": "Submit C3 (footage 0.062, sw_max 0.35) vs C2 = 23.9. >24.3 -> push sw 0.30; ~23.9 -> A2 peak is the ceiling (~24); <23.5 -> C2's 0.099 is optimum.",
+    "next_action": "Today = 5 slots, two-front factorial vs C2=23.9. Order: (1) C3 footage 0.062 [A2]; (2) H1 hp250 [A3 - the first-ever read of a frozen axis]; (3) reactive bracket: H2 hp300 if H1 wins, else C4 footage 0.048 if C3 wins; (4) the other bracket; (5) CONS = best footage x best hp count. H1 is the headline - A3 has been constant (200) since iter3, so we are blind to it, and A3=100*(caught/200)^2 is the only axis with enough headroom to reach 37.",
     "best_id": "C2",
     "best_score": 23.9,
-    "updated": "2026-06-25 15:55"
+    "updated": "2026-06-25 16:05"
   },
   "submissions": [
     {
@@ -226,6 +226,118 @@
         {
           "if": "< 23.5",
           "then": "Overcut (dropped real pay); peak in [0.062, 0.099] -> C2 (0.099) is the optimum, adopt as B'''."
+        }
+      ],
+      "_anchor_score": 23.9,
+      "_ratio": null,
+      "_delta": null,
+      "_verdict": null
+    },
+    {
+      "id": "H1",
+      "label": "honeypot overshoot 250",
+      "date": "2026-06-25",
+      "status": "queued",
+      "score": null,
+      "anchor": "C2",
+      "isolates": "A3",
+      "footage": 0.099,
+      "change": "C2 A2-config + honeypot target 200 -> 250 (cast wider for true honeypots ranked beyond 200)",
+      "rules": [
+        {
+          "if": "> 24.3",
+          "then": "Overshoot caught true honeypots ranked beyond 200 -> A3 precision was leaking; push to 300 (H2). A3 IS the gap to 37."
+        },
+        {
+          "if": "23.6 - 24.3",
+          "then": "Marginal -> the suspicion ranking is ~right at 200; little A3 headroom from count."
+        },
+        {
+          "if": "< 23.6",
+          "then": "The extra 50 flags cost more A2 (paying real wells vetoed) than they gained in A3 -> 200 is the right COUNT; the precision problem is WHICH 200. Pivot to a better suspicion detector."
+        }
+      ],
+      "_anchor_score": 23.9,
+      "_ratio": null,
+      "_delta": null,
+      "_verdict": null
+    },
+    {
+      "id": "H2",
+      "label": "honeypot overshoot 300",
+      "date": "2026-06-25",
+      "status": "queued",
+      "score": null,
+      "anchor": "C2",
+      "isolates": "A3",
+      "footage": 0.099,
+      "change": "C2 A2-config + honeypot target 200 -> 300 (reactive: submit if H1 wins)",
+      "rules": [
+        {
+          "if": "> H1 and > 24.3",
+          "then": "True honeypots populate the 200-300 suspicion band -> the ranking is poor; the real win is a better detector, not raw count."
+        },
+        {
+          "if": "< H1",
+          "then": "250 was the overshoot optimum; beyond it is pure A2 cost. Lock hp count at H1."
+        }
+      ],
+      "_anchor_score": 23.9,
+      "_ratio": null,
+      "_delta": null,
+      "_verdict": null
+    },
+    {
+      "id": "C4",
+      "label": "footage 0.048",
+      "date": "2026-06-25",
+      "status": "queued",
+      "score": null,
+      "anchor": "C2",
+      "isolates": "A2",
+      "footage": 0.048,
+      "change": "per-well Rw + key cutoffs + sw_max 0.30 (footage 0.062 -> 0.048; reactive: submit if C3 wins)",
+      "rules": [
+        {
+          "if": "> C3 and > 24",
+          "then": "A2 peak is below 0.048 -> true pay fraction is very low; keep cutting until the score turns down."
+        },
+        {
+          "if": "23.5 - 24",
+          "then": "Peak is ~0.05-0.06; that footage is the A2 ceiling."
+        },
+        {
+          "if": "< 23.5",
+          "then": "Overcut confirmed -> peak is in [0.062, 0.099]; adopt the better of C2 / C3."
+        }
+      ],
+      "_anchor_score": 23.9,
+      "_ratio": null,
+      "_delta": null,
+      "_verdict": null
+    },
+    {
+      "id": "CONS",
+      "label": "consolidate best footage x best hp",
+      "date": "2026-06-25",
+      "status": "held",
+      "score": null,
+      "anchor": "C2",
+      "isolates": "A2xA3",
+      "footage": "tbd",
+      "change": "REACTIVE: winning footage (C3/C4) + winning hp count (H1/H2). Build after their scores land.",
+      "rules": [
+        {
+          "if": "= 23.9 * r_footage * r_hp",
+          "then": "Axes independent -> they stack cleanly; this is the private-LB candidate."
+        },
+        {
+          "if": "< predicted",
+          "then": "Negative interaction (overshoot vetoes wells the footage cut also drops) -> take the single best probe instead."
+        },
+        {
+          "if": "> predicted",
+          "then": "Positive interaction -> push both footage and hp count further next window."
         }
       ],
       "_anchor_score": 23.9,
