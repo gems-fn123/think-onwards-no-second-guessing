@@ -13,9 +13,9 @@
       "Answer key (ttracx well_log_interpreter SKILL.md): pay = Vsh<0.40 AND Sw<0.60 AND PHIE>0.06, NO PERM; Humble a=0.62/m=2.15/n=2, Rw=0.05, matrix 2.65/fluid 1.0. We KEEP our per-well Rw (beats static Rw on A2) + the key's cutoff structure; our SW cutoff is tuned for max depth-overlap, not the key's nominal 0.60."
     ],
     "next_action": "Today = 5 slots, two-front factorial vs C2=23.9. Order: (1) C3 footage 0.062 [A2]; (2) H1 hp250 [A3 - the first-ever read of a frozen axis]; (3) reactive bracket: H2 hp300 if H1 wins, else C4 footage 0.048 if C3 wins; (4) the other bracket; (5) CONS = best footage x best hp count. H1 is the headline - A3 has been constant (200) since iter3, so we are blind to it, and A3=100*(caught/200)^2 is the only axis with enough headroom to reach 37.",
-    "best_id": "C2",
-    "best_score": 23.9,
-    "updated": "2026-06-25 16:05"
+    "best_id": "H2",
+    "best_score": 27.91,
+    "updated": "2026-06-25 16:32"
   },
   "submissions": [
     {
@@ -208,8 +208,8 @@
       "id": "C3",
       "label": "footage 0.062",
       "date": "2026-06-25",
-      "status": "queued",
-      "score": null,
+      "status": "scored",
+      "score": 24.4,
       "anchor": "C2",
       "isolates": "A2",
       "footage": 0.062,
@@ -229,16 +229,16 @@
         }
       ],
       "_anchor_score": 23.9,
-      "_ratio": null,
-      "_delta": null,
-      "_verdict": null
+      "_ratio": 1.086,
+      "_delta": 0.5,
+      "_verdict": "win"
     },
     {
       "id": "H1",
       "label": "honeypot overshoot 250",
       "date": "2026-06-25",
-      "status": "queued",
-      "score": null,
+      "status": "scored",
+      "score": 24.87,
       "anchor": "C2",
       "isolates": "A3",
       "footage": 0.099,
@@ -258,16 +258,16 @@
         }
       ],
       "_anchor_score": 23.9,
-      "_ratio": null,
-      "_delta": null,
-      "_verdict": null
+      "_ratio": 1.172,
+      "_delta": 0.97,
+      "_verdict": "win"
     },
     {
       "id": "H2",
       "label": "honeypot overshoot 300",
       "date": "2026-06-25",
-      "status": "queued",
-      "score": null,
+      "status": "scored",
+      "score": 27.91,
       "anchor": "C2",
       "isolates": "A3",
       "footage": 0.099,
@@ -283,9 +283,9 @@
         }
       ],
       "_anchor_score": 23.9,
-      "_ratio": null,
-      "_delta": null,
-      "_verdict": null
+      "_ratio": 1.86,
+      "_delta": 4.01,
+      "_verdict": "win"
     },
     {
       "id": "C4",

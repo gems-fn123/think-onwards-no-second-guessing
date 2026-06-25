@@ -229,3 +229,6 @@ outputs/run_logs/
 # Keep QC + validation reports tracked, ignore everything else under outputs/
 !outputs/qc_reports/
 !outputs/validation_report.md
+
+.gemini/
+gha-creds-*.json

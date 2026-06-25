@@ -235,7 +235,7 @@ RW_TEMP_REF = 75.0            # deg F reference for RW_DEFAULT
 # Rw mode: "constant" uses RW_DEFAULT; "per_well" derives Rw from the data via the
 # Rwa-minimum (Pickett) estimator in clean low-VSH zones. The diagnostic showed
 # data-implied Rw ~0.14 (median) vs our 0.05 -> SW was too low (A4/A2 hit).
-RW_MODE = "constant"
+RW_MODE = "per_well"
 RW_MIN = 0.02                  # clamp band for per-well Rw estimate
 RW_MAX = 0.60
 RW_RWA_PERCENTILE = 10         # Rwa percentile taken as the Rw estimate
@@ -256,13 +256,13 @@ PERM_MAX = 20000.0
 # Net-pay cutoffs (balanced). Pay requires ALL criteria AND a clean honeypot
 # verdict. These are the primary knobs for leaderboard tuning.
 # ---------------------------------------------------------------------------
-PAY_VSH_MAX = 0.50
-PAY_PHIE_MIN = 0.10           # standard clastic net-pay porosity cutoff
-PAY_SW_MAX = 0.55
+PAY_VSH_MAX = 0.40
+PAY_PHIE_MIN = 0.06           # standard clastic net-pay porosity cutoff
+PAY_SW_MAX = 0.35
 PAY_PERM_MIN = 0.10            # mD
 # The answer-key standard workflow flags pay on VSH<0.40 AND PHIE>0.06 AND SW<0.60
 # with NO permeability criterion. PAY_USE_PERM=False matches the key.
-PAY_USE_PERM = True
+PAY_USE_PERM = False
 
 # ---------------------------------------------------------------------------
 # Honeypot detection (well-level). The well is vetoed to zero pay only when the
@@ -276,7 +276,7 @@ HONEYPOT_SCORE_THRESHOLD = 3.0     # sum of weighted flags above which we veto
 # suspicion ranking (worst-first). Set to 0 to disable global fill and use only
 # hard vetoes. This is the main A3 knob — A3 = 100*(caught/200)^2, so recall
 # toward 200 is the single biggest score lever.
-HONEYPOT_TARGET_COUNT = 200
+HONEYPOT_TARGET_COUNT = 250
 # Weights are tiered. A "hard" physics violation (no real log can show it) is
 # weighted at the threshold so any single one vetoes the well. "Medium" signals
 # need to co-occur; "soft" signals only nudge. This is the main honeypot knob.
@@ -323,3 +323,4 @@ PERVASIVE_FRACTION = 0.30
 DEAD_CURVE_STD_EPS = 1e-6      # std below this => constant/dead curve
 MAX_NAN_FRACTION = 0.95        # curve is "mostly missing" above this
 WASHOUT_DELTA_IN = 1.0         # caliper - bit > this (in) => washed out sample
+
