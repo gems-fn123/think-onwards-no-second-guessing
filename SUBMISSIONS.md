@@ -117,18 +117,31 @@ Today's execution completed a **5-submission daily window consisting of 2 probes
    - **Intel:** Pushing the honeypot target to 300 caught even more true honeypots, resulting in our largest single-day gain (+4.01 over C2, bringing the score to 27.91). This confirms that a high concentration of true honeypots exists in the 250-300 suspicion band.
    - **Deep Implication:** While overshooting to 300 is a highly successful public leaderboard tactic, it is a brute-force approach. Since there are exactly 200 true honeypots in the entire dataset, flagging 300 wells means we are guaranteed to falsely flag at least 100 real wells as honeypots (which zeros their pay and risks harming A2). The massive A3 gain outweighed the A2 loss because A3 is squared and has huge headroom. However, the true path to a score of 37 (leaderboard target) is **improving the suspicion ranking** (precision) so we can catch all 200 true honeypots with a target count of exactly 200, avoiding any real well vetoes.
 
-## Evergreen Daily Submission Plan Framework (5 Submissions: 2 Probes, 3 Follow-throughs)
+## Evergreen Daily Submission Plan Framework (Adapted for Days 2-5)
 
-To spend our remaining submission budget rationally, we operate on a structured, daily **2-Probe / 3-Follow-through** protocol:
-- **2 Probes:** Direct, single-variable changes designed to isolate specific axes (e.g. testing a tighter pay cutoff or testing a new detector module).
-- **3 Follow-throughs (Brackets & Consolidation):**
-  - **Follow-through 1 (Reactive Bracket):** Immediately pursue the direction of the winning probe (e.g., if Probe A wins, test an even tighter bracket; if it loses, revert).
-  - **Follow-through 2 (Consolidation - CONS):** Combine the best-known independent parameters from previous windows (e.g. best pay cutoff x best honeypot count) to lock in a new high-water mark.
-  - **Follow-through 3 (Safety Bracket / Alternative):** Run a risk-managed alternative or a secondary axis probe (e.g. A4-recalibration check) to ensure we don't stall.
+To spend our remaining submission budget rationally, we are shifting from the initial exploration phase into the **Precision and Refinement Phase**. The daily allocation is now:
+
+- **Day 2 (The Precision Pivot):** 5 submissions dedicated entirely to testing new physics-residual features in the honeypot detector at strict targets (200-250) to prove precision gains.
+- **Days 3-4 (Invest & Refine):** ~10 submissions dedicated to refining the new honeypot features and sweeping small adjustments to the pay cutoff (`PAY_SW_MAX`) against the new, lower target count to find the absolute maximum score.
+- **Day 5 (Finalize & Hedge):** ~5 submissions to prepare the final entries. We will submit a "Max-public config" (highest public score) and a "Geologically defensible hedge" (strict target=200 with realistic pay cutoffs) as insurance against the private holdout.
 
 ---
 
-## Today's Execution & Disambiguation Plan (2026-06-26)
+## Next-Day Improvement Plan (Day 2: 2026-06-27)
+
+Following the Day 1 disambiguation which proved the A3 lever is real, Day 2 is fully dedicated to the **Precision Pivot**. We will engineer physics-residual features to improve the honeypot ranking, allowing us to lower the target count and recover A2.
+
+| slot | ID | change | isolates | target / rationale |
+|------|----|--------|----------|--------------------|
+| **1** | **Probe 1** | **H_PRECISION_200** (New physics-residual detector, target 200) | **A3** (precision) | Benchmark against **C3 (24.40)**, which used the old detector at target=200. If precision has improved, the new detector will score > 24.40 by catching more true honeypots within the strict 200 cap. |
+| **2** | **Probe 2** | **H_PRECISION_250** (New physics-residual detector, target 250) | **A3** (precision + slight overshoot) | Benchmark against **H1 (24.87)**, which used the old detector at target=250. Tests if a slight overshoot still helps the new detector. |
+| **3** | **Follow-through 1** | **CONS_PRECISION_200_sw035** (New detector 200 + sw_max 0.35) | **A2 x A3** (consolidation) | Lock in the precision gains with our best known footage cut. |
+| **4** | **Follow-through 2** | **TBD** | **A3** (reactive) | Reactive slot: adjust feature weights based on Probe 1/2 results. |
+| **5** | **Follow-through 3** | **TBD** | **A3** (reactive) | Reactive slot. |
+
+---
+
+## Previous Day Execution (Day 1: 2026-06-26)
 
 The original plan for today was overridden because the brute-force honeypot count (A3) lever kept accelerating. We spent the first 3 slots pushing the count to its absolute limit and locking it in. 
 
@@ -149,7 +162,7 @@ The scores are in, and they are definitive:
 *   **DISAMBIG_ANTI (Least Suspicious):** 27.36
 
 **The Read:**
-Because `anti (27.36) ≪ normal (31.50)`, the suspicion ranking is **highly effective**. The massive score gains from H1→H6 were **not** just blunt A2 pay-suppression. They were true A3 (honeypot recall) gains. 
+Because `anti (27.36) ≪ normal (31.50)`, the suspicion ranking is **highly effective**. The massive score gains from H1→H6 (pushing the count from 250 up to 700 and peaking at 34.43) were **not** just blunt A2 pay-suppression. They were true A3 (honeypot recall) gains. 
 
 When we inverted the sort (Anti), we vetoed real paying wells (cratering A2) and allowed true honeypots to slip through (cratering A3), causing a massive -4.14 drop. Even vetoing by weakest pay (29.07) performed significantly worse than vetoing by suspicion.
 

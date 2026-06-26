@@ -114,9 +114,26 @@ We executed the Day 1 plan and pulled the Day 2 disambiguation probes forward us
 *   `DISAMBIG_ANTI` (Least Suspicious): **27.36**
 
 **The Read:**
-Because `anti (27.36) ≪ normal (31.50)`, the suspicion ranking is **highly effective**. The massive score gains from H1→H6 were **not** just blunt A2 pay-suppression. They were true A3 (honeypot recall) gains. 
+Because `anti (27.36) ≪ normal (31.50)`, the suspicion ranking is **highly effective**. The massive score gains from H1→H6 (pushing the count from 250 up to 700 and peaking at 34.43) were **not** just blunt A2 pay-suppression. They were true A3 (honeypot recall) gains. 
 
 When we inverted the sort (Anti), we vetoed real paying wells (cratering A2) and allowed true honeypots to slip through (cratering A3), causing a massive -4.14 drop. Even vetoing by weakest pay (29.07) performed significantly worse than vetoing by suspicion.
 
 **The Mechanism Fix (Day 2+):**
 The A3 lever is real, but our current detector is too "blunt" — it requires casting a net of 700 to catch the 200 true honeypots, which costs us A2. The path to 37 is now perfectly clear: **Build a honeypot precision detector.** If we can improve the ranking features so the 200 true honeypots sit in the top 200-300 slots of the ranking, we can lower the target count back down, preserving A2 while maximizing A3.
+
+### Adapted Plan for Days 2–5 (Post-Disambiguation)
+Because we pulled Day 2 forward and definitively proved the A3 lever is real, we are ahead of schedule. The new roadmap is:
+
+**Day 2 — The Precision Pivot (~5 subs):**
+- **Action:** Engineer physics-residual features (triple-porosity variance, Pickett scatter, GR-PHIE decoupling) into `src/honeypot_detector.py`.
+- **Probes:** Test the upgraded detector at strict, mathematically sound target counts (200 and 250). If precision improves, these will beat the old detector's scores at the same counts.
+
+**Days 3–4 — Invest & Refine (~10 subs):**
+- **Action:** Refine the new honeypot features based on Day 2 feedback.
+- **Refinement:** "Footage × count refinement near the peak" — sweep small adjustments to the pay cutoff (`PAY_SW_MAX`) combined with the new, lower honeypot target count to find the absolute maximum score.
+
+**Day 5 — Finalize + HEDGE (~5 subs):**
+- **Action:** Prepare the final submissions.
+- **Hedge Strategy:** Submit two versions:
+  1. *Max-public config:* The absolute highest public score, even if slightly overfitted.
+  2. *Geologically defensible hedge:* A strict configuration obeying the math (exactly `HONEYPOT_TARGET_COUNT = 200` with realistic pay cutoffs) as insurance against a different private holdout distribution.
