@@ -303,8 +303,12 @@ def update_block(path: str, body: str) -> bool:
 def write_memory(data: dict, memory_dir: str) -> List[str]:
     done: List[str] = []
     if not os.path.isdir(memory_dir):
-        print(f"  (memory dir not found, skipping: {memory_dir})")
-        return done
+        try:
+            os.makedirs(memory_dir, exist_ok=True)
+            print(f"  created memory dir: {memory_dir}")
+        except OSError as exc:
+            print(f"  (cannot create memory dir, skipping: {exc})")
+            return done
     snap = {
         "updated": data["meta"]["updated"],
         "best_id": data["meta"]["best_id"],
