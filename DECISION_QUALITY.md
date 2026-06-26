@@ -77,28 +77,46 @@ A4 (Rw, data-derived) and A2 (overprediction), with honeypot work shifting to
   keep count ~200 but improve *membership* (swap the weakest severity picks for
   the residual outliers). Validate by feature-subset stability, not labels.
 
-## 4. Pre-registered experiment ladder (next submissions)
+## 4. Pre-registered experiment ladder (The Original 5-Day Plan)
 
-Each is single-variable with a written acceptance test. `B` = current best (iter3, 21.22).
+*Note: This was the original 25-submission plan designed to disambiguate the axes. It has been partially executed and adapted as live scores returned (see Day 1 Findings below).*
 
-| # | Change (everything else = B) | Moves | Pre-registered acceptance |
-|---|------------------------------|-------|---------------------------|
-| S1 | **Per-well data-derived Rw**, PAY_FLAG frozen to B | A4 only | `(T/21.22)^4` = A4 ratio. Expect > 1 (Rw 0.05→~0.14 fixes SW). If ≤1, Rwa prior wrong or SW isn't the A4 floor. |
-| S2 | Per-well Rw + let pay re-derive (SW↑→less pay) | A2+A3 | Expect ≥ S1 if overprediction was hurting A2. If < S1, pay cut too far. |
-| S3 | Honeypot **membership swap** at fixed count 200 (residual picks ↔ weakest severity picks) | A3 precision | If `T>21.22` at equal count, residual set is purer → adopt. Else revert. |
-| S4 | Overshoot 200→250 by residual rank | A3 count vs A2 | If `T>` B, catchable honeypots remain past 200; else freeze count at 200. |
-| S5 | PERM standard-Timur form, pay frozen | A4 only | If A4 ratio >1.1, PERM was a floor curve; else PERM fine. |
-| S6 | Best-combined (winning Rw + honeypot set + pay cutoff + PERM) | all | Predict total = product of measured ratios; deviation ⇒ axis interaction. |
+**Realistic ceiling:** brute count is decelerating (+3.0→+2.0→+1.6); A2 craters at hp700 (~100 wells left). Pure count likely caps **~33–34**. Reaching **37 needs the mechanism fix** — a clean lever that raises one axis without the A2 cost. So disambiguation isn't optional, it's the path.
 
-After S1–S6 we hold per-axis ratios instead of one fused number, with ~60
-submissions left to exploit.
+**Day 1 (this window, finish what's built):**
+- H5 hp600, H6 hp700 → top of the brute curve (2)
+- CONS_peak × sw0.35 → lock current best (1)
 
-## 5. Statistically questionable items being retired
+**Day 2 — DISAMBIGUATE (the decisive day, needs ~10 lines of code):**
+- **Anti-suspicion veto 500** — fill by *least* suspicious. vs H4=31.5.
+- **Pay-confidence veto 500** — veto *weakest-pay* wells, not "most suspicious."
+- Reads:
+  - anti ≈ 31.5 → ranking useless → gain is **blunt count = A2 pay over-prediction** → switch to pay-presence modeling.
+  - anti ≪ 31.5 → ranking real → **A3 recall** → build honeypot precision detector.
+  - pay-conf > 31.5 → **veto-by-pay-quality wins** (defensible + private-robust) → adopt.
 
-- "Flagged 200 = caught 200" (recall ≪ 200; padding with real wells).
-- Per-change magnitudes read off bundled submissions.
-- Fixed-threshold contradiction flags on a look-real manifold → replaced by
-  continuous population-relative residuals.
-- Univariate suspicion ranking on unimodal features → multivariate residual
-  Mahalanobis (still capped, but better precision than severity-only).
-- RW sweep with pay coupled to RW → use freeze-pay decoupling for a clean read.
+**Days 3–4 — invest the proven lever (~8 subs):**
+- If A2: real **pay-presence classifier** (which wells have *any* net pay), sweep its threshold. Mechanism-sound, likely beats blind count.
+- If A3: better honeypot features, test.
+- Plus footage×count refinement near the peak.
+
+**Day 5 — finalize + HEDGE (~4 subs):**
+- Max-public config **and** a geologically defensible hedge (hp~200–300, real pay model). Private decides; we can't see it — submit both.
+- **Buffer:** ~3 subs for re-tests.
+
+## 5. Day 1 Findings (2026-06-26)
+
+We executed the Day 1 plan and pulled the Day 2 disambiguation probes forward using flex slots.
+
+**The Disambiguation Results:**
+*   `H4` (Normal Suspicion): **31.50**
+*   `DISAMBIG_PAY` (Weakest Pay): **29.07**
+*   `DISAMBIG_ANTI` (Least Suspicious): **27.36**
+
+**The Read:**
+Because `anti (27.36) ≪ normal (31.50)`, the suspicion ranking is **highly effective**. The massive score gains from H1→H6 were **not** just blunt A2 pay-suppression. They were true A3 (honeypot recall) gains. 
+
+When we inverted the sort (Anti), we vetoed real paying wells (cratering A2) and allowed true honeypots to slip through (cratering A3), causing a massive -4.14 drop. Even vetoing by weakest pay (29.07) performed significantly worse than vetoing by suspicion.
+
+**The Mechanism Fix (Day 2+):**
+The A3 lever is real, but our current detector is too "blunt" — it requires casting a net of 700 to catch the 200 true honeypots, which costs us A2. The path to 37 is now perfectly clear: **Build a honeypot precision detector.** If we can improve the ranking features so the 200 true honeypots sit in the top 200-300 slots of the ranking, we can lower the target count back down, preserving A2 while maximizing A3.

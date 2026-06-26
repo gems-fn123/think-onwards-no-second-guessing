@@ -48,7 +48,7 @@ def analyze_well(path: str, decouple_pay: bool = False) -> Dict:
             "apparent": apparent, "app_frac": app_frac}
 
 
-def select_honeypots(runs: List[Dict], target: int | None = None) -> set:
+def select_honeypots(runs: List[Dict], target: int | None = None, veto_order: str = "suspicion") -> set:
     """
     Global honeypot set = all hard auto-vetoes, then filled by descending
     suspicion up to `target` (the known 25% base rate = 200). A3 is squared in
@@ -60,11 +60,21 @@ def select_honeypots(runs: List[Dict], target: int | None = None) -> set:
     target = int(target or 0)
     honey = set(hard)
     if target > len(honey):
-        order = sorted(range(len(runs)), key=lambda j: -runs[j]["hp"].suspicion)
+        if veto_order == "suspicion":
+            # Normal: sort descending by suspicion score
+            order = sorted(range(len(runs)), key=lambda j: -runs[j]["hp"].suspicion)
+        elif veto_order == "anti":
+            # Anti: sort ascending by suspicion score (least suspicious first)
+            order = sorted(range(len(runs)), key=lambda j: runs[j]["hp"].suspicion)
+        elif veto_order == "payconf":
+            # Payconf: sort ascending by apparent pay fraction (weakest pay first)
+            order = sorted(range(len(runs)), key=lambda j: runs[j]["app_frac"])
+            
         for j in order:
-            if len(honey) >= target:
-                break
-            honey.add(j)
+            if j not in honey:
+                honey.add(j)
+                if len(honey) >= target:
+                    break
     return honey, hard
 
 
@@ -77,6 +87,8 @@ def main(argv: List[str] | None = None) -> int:
     ap.add_argument("--no-zip", action="store_true", help="skip building the submission zip")
     ap.add_argument("--honeypot-target", type=int, default=None,
                     help="override config.HONEYPOT_TARGET_COUNT (0 = hard vetoes only)")
+    ap.add_argument("--veto-order", choices=["suspicion", "anti", "payconf"], default="suspicion",
+                    help="how to fill the target count: suspicion (normal), anti (least suspicious), or payconf (weakest pay)")
     ap.add_argument("--rw", type=float, default=None,
                     help="override config.RW_DEFAULT (formation water resistivity) for SW")
     ap.add_argument("--rw-mode", choices=["constant", "per_well"], default=None,
@@ -158,9 +170,9 @@ def main(argv: List[str] | None = None) -> int:
             print(f"  analyzed {i}/{len(wells)} wells ({time.time()-t0:.0f}s)")
 
     # ---- Global honeypot selection (needs all wells ranked together) ----
-    honey, hard = select_honeypots(runs, target=args.honeypot_target)
+    honey, hard = select_honeypots(runs, target=args.honeypot_target, veto_order=args.veto_order)
     print(f"  honeypots: hard auto-veto={len(hard)}, total flagged={len(honey)} "
-          f"(target {getattr(config, 'HONEYPOT_TARGET_COUNT', 0)})")
+          f"(target {getattr(config, 'HONEYPOT_TARGET_COUNT', 0)}, order={args.veto_order})")
 
     # ---- Phase 2: finalize pay (apply veto), write, validate, log ----
     for j, r in enumerate(runs):

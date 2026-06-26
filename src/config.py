@@ -276,7 +276,7 @@ HONEYPOT_SCORE_THRESHOLD = 3.0     # sum of weighted flags above which we veto
 # suspicion ranking (worst-first). Set to 0 to disable global fill and use only
 # hard vetoes. This is the main A3 knob — A3 = 100*(caught/200)^2, so recall
 # toward 200 is the single biggest score lever.
-HONEYPOT_TARGET_COUNT = 250
+HONEYPOT_TARGET_COUNT = 700
 # Weights are tiered. A "hard" physics violation (no real log can show it) is
 # weighted at the threshold so any single one vetoes the well. "Medium" signals
 # need to co-occur; "soft" signals only nudge. This is the main honeypot knob.

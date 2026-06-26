@@ -13,9 +13,9 @@
       "Answer key (ttracx well_log_interpreter SKILL.md): pay = Vsh<0.40 AND Sw<0.60 AND PHIE>0.06, NO PERM; Humble a=0.62/m=2.15/n=2, Rw=0.05, matrix 2.65/fluid 1.0. We KEEP our per-well Rw (beats static Rw on A2) + the key's cutoff structure; our SW cutoff is tuned for max depth-overlap, not the key's nominal 0.60."
     ],
     "next_action": "H4 hp500 = 31.5 (climbing, +1.59 over H3; deltas +3.04/+2.00/+1.59 = decelerating). Best 31.5. NEXT: submit H5 hp600 [ready]; if >31.5 submit H6 hp700 [ready]. Then CONS_<peak>_sw035 = best count x C3 footage (sw 0.35) = new-high shot (hp500/600 variants prebuilt). Peak likely 600-700 then A2 craters (hp700 leaves only ~100 paying wells). Flex slot: push the winning count+footage combo further.",
-    "best_id": "H4",
-    "best_score": 31.5,
-    "updated": "2026-06-26 06:12"
+    "best_id": "CONS",
+    "best_score": 34.52,
+    "updated": "2026-06-26 15:33"
   },
   "submissions": [
     {
@@ -345,8 +345,8 @@
       "id": "H5",
       "label": "honeypot count 600",
       "date": "2026-06-26",
-      "status": "queued",
-      "score": null,
+      "status": "scored",
+      "score": 33.34,
       "anchor": "C2",
       "isolates": "A3",
       "footage": 0.099,
@@ -362,16 +362,16 @@
         }
       ],
       "_anchor_score": 23.9,
-      "_ratio": null,
-      "_delta": null,
-      "_verdict": null
+      "_ratio": 3.787,
+      "_delta": 9.44,
+      "_verdict": "win"
     },
     {
       "id": "H6",
       "label": "honeypot count 700",
       "date": "2026-06-26",
-      "status": "queued",
-      "score": null,
+      "status": "scored",
+      "score": 34.43,
       "anchor": "C2",
       "isolates": "A3",
       "footage": 0.099,
@@ -387,9 +387,9 @@
         }
       ],
       "_anchor_score": 23.9,
-      "_ratio": null,
-      "_delta": null,
-      "_verdict": null
+      "_ratio": 4.307,
+      "_delta": 10.53,
+      "_verdict": "win"
     },
     {
       "id": "C4",
@@ -424,8 +424,8 @@
       "id": "CONS",
       "label": "consolidate best footage x best hp",
       "date": "2026-06-25",
-      "status": "held",
-      "score": null,
+      "status": "scored",
+      "score": 34.52,
       "anchor": "C2",
       "isolates": "A2xA3",
       "footage": "tbd",
@@ -445,9 +445,9 @@
         }
       ],
       "_anchor_score": 23.9,
-      "_ratio": null,
-      "_delta": null,
-      "_verdict": null
+      "_ratio": 4.352,
+      "_delta": 10.62,
+      "_verdict": "win"
     },
     {
       "id": "C1",
@@ -464,6 +464,36 @@
       "_ratio": null,
       "_delta": null,
       "_verdict": null
+    },
+    {
+      "id": "DISAMBIG_ANTI",
+      "label": "anti-suspicion veto 500",
+      "date": "2026-06-26",
+      "status": "scored",
+      "score": 27.36,
+      "anchor": "H4",
+      "isolates": "A2 vs A3",
+      "footage": 0.099,
+      "change": "veto least suspicious",
+      "_anchor_score": 31.5,
+      "_ratio": 0.569,
+      "_delta": -4.14,
+      "_verdict": "loss"
+    },
+    {
+      "id": "DISAMBIG_PAY",
+      "label": "pay-confidence veto 500",
+      "date": "2026-06-26",
+      "status": "scored",
+      "score": 29.07,
+      "anchor": "H4",
+      "isolates": "A2 vs A3",
+      "footage": 0.099,
+      "change": "veto weakest pay",
+      "_anchor_score": 31.5,
+      "_ratio": 0.725,
+      "_delta": -2.43,
+      "_verdict": "loss"
     }
   ]
 }
