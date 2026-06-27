@@ -133,9 +133,9 @@ Following the Day 1 disambiguation which proved the A3 lever is real, Day 2 is f
 
 | slot | ID | change | isolates | target / rationale |
 |------|----|--------|----------|--------------------|
-| **1** | **Probe 1** | **H_PRECISION_200** (New physics-residual detector, target 200) | **A3** (precision) | Benchmark against **C3 (24.40)**, which used the old detector at target=200. If precision has improved, the new detector will score > 24.40 by catching more true honeypots within the strict 200 cap. |
-| **2** | **Probe 2** | **H_PRECISION_250** (New physics-residual detector, target 250) | **A3** (precision + slight overshoot) | Benchmark against **H1 (24.87)**, which used the old detector at target=250. Tests if a slight overshoot still helps the new detector. |
-| **3** | **Follow-through 1** | **CONS_PRECISION_200_sw035** (New detector 200 + sw_max 0.35) | **A2 x A3** (consolidation) | Lock in the precision gains with our best known footage cut. |
+| **1** | **Probe 1** | **H_PRECISION_400** (New physics-residual detector, target 400) | **A3 vs A2** (precision) | Benchmark against **H3 (29.91)**. If precision improved, we catch more true honeypots at 400 than we used to, dragging the peak left. |
+| **2** | **Probe 2** | **H_PRECISION_500** (New physics-residual detector, target 500) | **A3 vs A2** (precision) | Benchmark against **H4 (31.50)**. Tests if the new detector can approach the 34+ scores without needing to cast a massive 700 net. |
+| **3** | **Follow-through 1** | **CONS_PRECISION_peak_sw035** (New detector peak + sw_max 0.35) | **A2 x A3** (consolidation) | Lock in the precision gains with our best known footage cut. |
 | **4** | **Follow-through 2** | **TBD** | **A3** (reactive) | Reactive slot: adjust feature weights based on Probe 1/2 results. |
 | **5** | **Follow-through 3** | **TBD** | **A3** (reactive) | Reactive slot. |
 
