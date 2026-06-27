@@ -15,7 +15,7 @@
     "next_action": "H4 hp500 = 31.5 (climbing, +1.59 over H3; deltas +3.04/+2.00/+1.59 = decelerating). Best 31.5. NEXT: submit H5 hp600 [ready]; if >31.5 submit H6 hp700 [ready]. Then CONS_<peak>_sw035 = best count x C3 footage (sw 0.35) = new-high shot (hp500/600 variants prebuilt). Peak likely 600-700 then A2 craters (hp700 leaves only ~100 paying wells). Flex slot: push the winning count+footage combo further.",
     "best_id": "CONS",
     "best_score": 34.52,
-    "updated": "2026-06-27 09:12"
+    "updated": "2026-06-27 11:01"
   },
   "submissions": [
     {
@@ -524,6 +524,36 @@
       "_ratio": 1.047,
       "_delta": 0.36,
       "_verdict": "win"
+    },
+    {
+      "id": "H_PRECISION_600",
+      "label": "New physics detector 600",
+      "date": "2026-06-27",
+      "status": "scored",
+      "score": 33.4,
+      "anchor": "H5",
+      "isolates": "A3 vs A2",
+      "footage": 0.099,
+      "change": "New physics-residual detector at target 600",
+      "_anchor_score": 33.34,
+      "_ratio": 1.007,
+      "_delta": 0.06,
+      "_verdict": "flat"
+    },
+    {
+      "id": "CONS_PRECISION_500_sw035",
+      "label": "New detector 500 + sw_max 0.35",
+      "date": "2026-06-27",
+      "status": "scored",
+      "score": 31.86,
+      "anchor": "H_PRECISION_500",
+      "isolates": "A2 x A3",
+      "footage": 0.062,
+      "change": "Lock in precision at 500 with sw035",
+      "_anchor_score": 31.86,
+      "_ratio": 1.0,
+      "_delta": 0.0,
+      "_verdict": "flat"
     }
   ]
 }
