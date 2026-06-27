@@ -15,7 +15,7 @@
     "next_action": "H4 hp500 = 31.5 (climbing, +1.59 over H3; deltas +3.04/+2.00/+1.59 = decelerating). Best 31.5. NEXT: submit H5 hp600 [ready]; if >31.5 submit H6 hp700 [ready]. Then CONS_<peak>_sw035 = best count x C3 footage (sw 0.35) = new-high shot (hp500/600 variants prebuilt). Peak likely 600-700 then A2 craters (hp700 leaves only ~100 paying wells). Flex slot: push the winning count+footage combo further.",
     "best_id": "CONS",
     "best_score": 34.52,
-    "updated": "2026-06-27 11:01"
+    "updated": "2026-06-27 11:20"
   },
   "submissions": [
     {
@@ -554,6 +554,21 @@
       "_ratio": 1.0,
       "_delta": 0.0,
       "_verdict": "flat"
+    },
+    {
+      "id": "H_PRECISION_700",
+      "label": "New physics detector 700",
+      "date": "2026-06-27",
+      "status": "scored",
+      "score": 34.01,
+      "anchor": "H6",
+      "isolates": "A3 vs A2",
+      "footage": 0.099,
+      "change": "New physics-residual detector at target 700",
+      "_anchor_score": 34.43,
+      "_ratio": 0.952,
+      "_delta": -0.42,
+      "_verdict": "loss"
     }
   ]
 }
