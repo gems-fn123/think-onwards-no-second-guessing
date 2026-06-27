@@ -223,6 +223,7 @@ data/raw_las/
 data/sample_submission/
 data/processed/
 outputs/submission_las/
+outputs/submission_*.zip
 # Keep all artifacts, QC, and validation tracked
 !outputs/qc_reports/
 !outputs/validation_report.md

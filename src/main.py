@@ -171,8 +171,9 @@ def main(argv: List[str] | None = None) -> int:
 
     # ---- Global honeypot selection (needs all wells ranked together) ----
     honey, hard = select_honeypots(runs, target=args.honeypot_target, veto_order=args.veto_order)
+    actual_target = args.honeypot_target if args.honeypot_target is not None else getattr(config, 'HONEYPOT_TARGET_COUNT', 0)
     print(f"  honeypots: hard auto-veto={len(hard)}, total flagged={len(honey)} "
-          f"(target {getattr(config, 'HONEYPOT_TARGET_COUNT', 0)}, order={args.veto_order})")
+          f"(target {actual_target}, order={args.veto_order})")
 
     # ---- Phase 2: finalize pay (apply veto), write, validate, log ----
     for j, r in enumerate(runs):

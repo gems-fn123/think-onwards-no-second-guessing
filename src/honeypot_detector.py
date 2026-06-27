@@ -138,6 +138,50 @@ def detect(
     flags["raw_oob_violations"] = oob_frac > config.HONEYPOT_OOB_FRACTION
     detail["raw_oob_fraction"] = oob_frac
 
+    # 10. GR-PHIE Decoupling (High GR + High Porosity)
+    gr_phie_frac = 0.0
+    if "GR" in canonical:
+        gr = canonical["GR"]["values"]
+        phie = petro.phie
+        m = np.isfinite(gr) & np.isfinite(phie)
+        if m.sum() > 20:
+            contra = (gr > 100.0) & (phie > 0.20)
+            gr_phie_frac = float(np.mean(contra[m]))
+    detail["gr_phie_fraction"] = gr_phie_frac
+
+    # 11. Pickett Scatter (Rw Variance in wet zones)
+    pickett_scatter = 0.0
+    if "RT" in canonical:
+        rt = canonical["RT"]["values"]
+        phit = petro.phit
+        vsh = petro.vsh
+        m = np.isfinite(rt) & np.isfinite(phit) & np.isfinite(vsh) & (phit > 0.05)
+        if m.sum() > 20:
+            rwa = rt[m] * (phit[m] ** config.ARCHIE_M)
+            clean_m = vsh[m] < 0.30
+            if clean_m.sum() > 20:
+                rwa_clean = rwa[clean_m]
+                rwa_clean = rwa_clean[(rwa_clean > 0.001) & (rwa_clean < 10.0)]
+                if rwa_clean.size > 20:
+                    pickett_scatter = float(np.std(np.log10(rwa_clean)))
+    detail["pickett_scatter"] = pickett_scatter
+
+    # 12. Triple-Porosity Variance
+    por_variance = 0.0
+    if "RHOB" in canonical and "NPHI" in canonical and "DT" in canonical:
+        rhob = canonical["RHOB"]["values"]
+        nphi = canonical["NPHI"]["values"]
+        dt = canonical["DT"]["values"]
+        m = np.isfinite(rhob) & np.isfinite(nphi) & np.isfinite(dt)
+        if m.sum() > 20:
+            phid = (2.65 - rhob[m]) / (2.65 - 1.0)
+            phin = nphi[m]
+            phis = (dt[m] - 55.5) / (189.0 - 55.5)
+            pors = np.vstack([phid, phin, phis])
+            var_per_depth = np.var(pors, axis=0)
+            por_variance = float(np.mean(var_per_depth))
+    detail["por_variance"] = por_variance
+
     # Weighted boolean score -> hard auto-veto.
     score = 0.0
     for name, on in flags.items():
@@ -155,6 +199,9 @@ def detect(
         + 2.0 * neg_frac
         + 2.0 * imp_frac
         + 1.0 * detail.get("rt_porosity_contradiction_fraction", 0.0)
+        + 2.0 * gr_phie_frac                     # New: GR-PHIE contradiction
+        + 1.0 * min(pickett_scatter, 1.0)        # New: Pickett scatter
+        + 10.0 * por_variance                    # New: Triple-porosity variance
         + 1.0 * max(0.0, 0.60 - min_ac)          # noisy/discontinuous curves
         + 0.5 * qc.washout_fraction
     )
