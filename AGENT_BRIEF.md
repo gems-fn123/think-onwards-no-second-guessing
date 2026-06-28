@@ -5,10 +5,11 @@ Score data lives in `outputs/dashboard/submissions.json` (machine-readable). Thi
 the prose understanding distilled from it + all scattered docs. When you learn something
 that changes strategy, update THIS file and `submissions.json` — not a new scratch doc.
 
-- **Last updated:** 2026-06-28 (end of day-3)
+- **Last updated:** 2026-06-28 (day-4 prep complete; zips built, not yet uploaded/scored)
 - **Current best:** **34.65** — `COUNT_KNEE_hp750`
 - **Leaderboard pole:** ~39 (target 37 banked in JSON). Gap ≈ 4.3.
 - **Time left:** day-4 (29-jun) + day-5 (30-jun) = ~10 submissions.
+- **Day-4 submission candidates ready:** `PRECISION_v1_hp300/400/500` (new honeypot precision features on `main`; all validation READY).
 - **Canonical branch:** `main` (clean detector). `day-3-and-4` carries the live scoreboard JSON but its code has a *regression* — see Branches.
 
 ---
@@ -207,6 +208,43 @@ Honeypot fill: hard auto-vetoes (≈135) first, then descending suspicion up to 
 - `outputs/submission_*.zip` — every built submission (tracked; ~37MB each; ~800MB total bloat — untrack only with both-machine coordination or pull deletes them).
 
 **Workflow:** pick lever → build zip (recipe §11) → upload → get score → `--set` → read via ratio (§4) → update this file + JSON if strategy shifts.
+
+---
+
+## 15. Day-4 (29-jun) — PRECISION_v1 submission candidates
+
+**Status:** zips built on `main`, validation READY, awaiting upload/score.
+
+On 2026-06-28 two new continuous suspicion features were added to `src/honeypot_detector.py` on `main`:
+
+1. **`_porosity_closure_mad`** — median absolute deviation of density/neutron/sonic porosity estimates from their per-depth median. High values mean the three independent porosity measurements disagree systematically → synthetic-honeypot signal.
+2. **`_gr_jerkiness`** — normalised median absolute third-difference of GR. Real gamma-ray logs are geologically smooth; injected high-frequency noise shows up as a high jerkiness ratio.
+
+Both are folded into the continuous `suspicion` ranking (not hard boolean flags) with conservative weights so they nudge the ranking without destabilising the proven main detector. Hard physics auto-vetoes remain unchanged.
+
+### Built zips (upload in this order)
+
+| # | Zip | Target hp | Hypothesis vs baseline | Acceptance | Refutation |
+|---|---|---|---|---|---|
+| 1 | `outputs/submission_20260628_PRECISION_v1_hp400.zip` | 400 | New features concentrate true honeypots in top-400 slots → beats `H3=29.91` | score > 29.91 | score ≤ 29.91 → features add no ranking value |
+| 2 | `outputs/submission_20260628_PRECISION_v1_hp500.zip` | 500 | Same at hp500 → beats `H4=31.50` | score > 31.50 | score ≤ 31.50 → precision signal saturates by hp500 |
+| 3 | `outputs/submission_20260628_PRECISION_v1_hp300.zip` | 300 | If ranking is very strong, lower hp recovers A2 pay without losing A3 | score > 27.91 (H2) | score ≤ 27.91 → features mis-rank real wells upward |
+
+### Why this order
+
+Upload **hp400 first**. It is the cleanest test: a win proves the new features improve ranking; a loss tells us to stop. hp500 is the second probe — if hp400 won, hp500 checks whether the ranking still scales. hp300 is the aggressive A2-recovery bet only if hp400/500 show the new ranking is genuinely separating honeypots from real wells.
+
+### Fallbacks
+
+- If `PRECISION_v1_hp400` loses → new precision features are not the path. Revert `src/honeypot_detector.py` to the clean detector and spend day-4 on (a) re-running `COUNT_KNEE_hp750` for the banked max, and (b) building the moderate-count hedge for day-5.
+- If `PRECISION_v1_hp400` wins but hp500 loses → the ranking improvement is thin and only helps at low count. This is still useful for a day-5 hedge but probably can't beat 34.65.
+- If `PRECISION_v1_hp500` wins → immediately test hp600/650/700 with the same features to find the new count knee. The new knee could shift left (more A2 recovery) and potentially beat 34.65.
+
+### Technical notes
+
+- Build command used: `python -m src.main --honeypot-target N --tag PRECISION_v1_hpN`
+- Validation: READY ✅ on all three; 0 physics-gate failures, 0 round-trip failures.
+- The stdout message still prints `target 700` as a display string, but the actual flagged count matches the CLI override (300/400/500 confirmed in `outputs/validation_report.md`).
 
 ---
 

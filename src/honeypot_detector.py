@@ -71,6 +71,54 @@ def _min_autocorr(rec: WellRecord) -> float:
     return min(acs) if acs else 0.6
 
 
+def _porosity_closure_mad(canonical: Dict[str, Dict[str, np.ndarray]]) -> float:
+    """
+    Median absolute deviation of the three independent porosity estimates
+    (density, neutron, sonic) from their per-depth median. High values mean
+    the curves tell incompatible porosity stories — a strong synthetic-honeypot
+    signature because real rocks satisfy approximate porosity closure.
+    """
+    if not all(f in canonical for f in ("RHOB", "NPHI", "DT")):
+        return 0.0
+    rhob = canonical["RHOB"]["values"]
+    nphi = canonical["NPHI"]["values"]
+    dt = canonical["DT"]["values"]
+    m = np.isfinite(rhob) & np.isfinite(nphi) & np.isfinite(dt)
+    if m.sum() < 20:
+        return 0.0
+    phid = (2.65 - rhob[m]) / (2.65 - 1.0)
+    phin = nphi[m]
+    phis = (dt[m] - 55.5) / (189.0 - 55.5)
+    pors = np.vstack([phid, phin, phis])
+    median = np.median(pors, axis=0)
+    mad = np.median(np.abs(pors - median), axis=0)
+    return float(np.mean(mad))
+
+
+def _gr_jerkiness(canonical: Dict[str, Dict[str, np.ndarray]]) -> float:
+    """
+    Median absolute third-difference of GR, normalised by the median absolute
+    first-difference. Real gamma-ray logs are geologically smooth; synthetic
+    decoys often inject high-frequency noise that stands out as a high jerkiness
+    ratio (large third differences relative to the underlying trend).
+    """
+    if "GR" not in canonical:
+        return 0.0
+    gr = canonical["GR"]["values"]
+    x = gr[np.isfinite(gr)]
+    if x.size < 40:
+        return 0.0
+    d1 = np.abs(np.diff(x, n=1))
+    d3 = np.abs(np.diff(x, n=3))
+    if d1.size == 0 or d3.size == 0:
+        return 0.0
+    m1 = np.median(d1)
+    m3 = np.median(d3)
+    if m1 < 1e-9:
+        return 0.0
+    return float(m3 / m1)
+
+
 def _pervasive(mask: np.ndarray, valid: np.ndarray) -> float:
     """Fraction of valid samples satisfying mask."""
     if valid.sum() == 0:
@@ -150,6 +198,17 @@ def detect(
     # fill up to the known 25% honeypot base rate by suspicion, worst-first.
     min_ac = _min_autocorr(rec)
     detail["min_autocorr"] = min_ac
+
+    # --- day-4 precision additions ---
+    # Goal: separate the 200 honeypots from the 600 real wells so we can catch
+    # all 200 in ~250 picks instead of ~750. The existing features (autocorr,
+    # raw OOB, etc.) already do part of the job. The two additions below target
+    # synthetic artefacts: incompatible porosity closure and injected GR noise.
+    por_mad = _porosity_closure_mad(canonical)
+    gr_jerk = _gr_jerkiness(canonical)
+    detail["porosity_closure_mad"] = por_mad
+    detail["gr_jerkiness"] = gr_jerk
+
     severity = (
         2.0 * detail.get("raw_oob_fraction", 0.0)
         + 2.0 * neg_frac
@@ -157,6 +216,8 @@ def detect(
         + 1.0 * detail.get("rt_porosity_contradiction_fraction", 0.0)
         + 1.0 * max(0.0, 0.60 - min_ac)          # noisy/discontinuous curves
         + 0.5 * qc.washout_fraction
+        + 1.0 * por_mad                          # porosity closure violation
+        + 0.3 * gr_jerk                          # GR synthetic-noise ratio
     )
     suspicion = score + severity
 
