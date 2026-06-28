@@ -227,6 +227,9 @@ outputs/submission_las/
 !outputs/qc_reports/
 !outputs/validation_report.md
 !outputs/run_logs/
+# Raw challenge-data downloads (large, re-downloadable from ThinkOnward)
+/no-second-guessing-submission-sample.zip
+/no_second_guessing_evaluation_data.zip
 
 .gemini/
 gha-creds-*.json
