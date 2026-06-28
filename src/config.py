@@ -258,7 +258,7 @@ PERM_MAX = 20000.0
 # ---------------------------------------------------------------------------
 PAY_VSH_MAX = 0.40
 PAY_PHIE_MIN = 0.06           # standard clastic net-pay porosity cutoff
-PAY_SW_MAX = 0.30
+PAY_SW_MAX = 0.25  # PREC_500_sw025 probe
 PAY_PERM_MIN = 0.10            # mD
 # The answer-key standard workflow flags pay on VSH<0.40 AND PHIE>0.06 AND SW<0.60
 # with NO permeability criterion. PAY_USE_PERM=False matches the key.

@@ -15,7 +15,7 @@
     "next_action": "H4 hp500 = 31.5 (climbing, +1.59 over H3; deltas +3.04/+2.00/+1.59 = decelerating). Best 31.5. NEXT: submit H5 hp600 [ready]; if >31.5 submit H6 hp700 [ready]. Then CONS_<peak>_sw035 = best count x C3 footage (sw 0.35) = new-high shot (hp500/600 variants prebuilt). Peak likely 600-700 then A2 craters (hp700 leaves only ~100 paying wells). Flex slot: push the winning count+footage combo further.",
     "best_id": "CONS",
     "best_score": 34.52,
-    "updated": "2026-06-28 20:55"
+    "updated": "2026-06-28 21:21"
   },
   "submissions": [
     {
@@ -589,13 +589,28 @@
       "id": "PREC_500_sw030",
       "label": "Precision features at hp=500, sw=0.30",
       "date": "2026-06-28",
-      "status": "queued",
-      "score": null,
+      "status": "scored",
+      "score": 33.12,
       "anchor": "H_PRECISION_500",
       "isolates": "A2",
       "footage": 0.0149,
       "change": "Day-2 precision features + honeypot_target=500 + PAY_SW_MAX=0.30",
       "_anchor_score": 31.86,
+      "_ratio": 1.168,
+      "_delta": 1.26,
+      "_verdict": "win"
+    },
+    {
+      "id": "PREC_500_sw025",
+      "label": "Precision features at hp=500, sw=0.25",
+      "date": "2026-06-28",
+      "status": "queued",
+      "score": null,
+      "anchor": "PREC_500_sw030",
+      "isolates": "A2",
+      "footage": 0.0109,
+      "change": "Day-2 precision features + honeypot_target=500 + PAY_SW_MAX=0.25",
+      "_anchor_score": 33.12,
       "_ratio": null,
       "_delta": null,
       "_verdict": null
