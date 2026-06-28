@@ -1,6 +1,0 @@
-well_id,n_rows,n_curves_in,families,vsh_method,phit_method,sw_method,rho_ma,no_deep_res,apparent_pay_frac,honeypot_score,is_honeypot,honeypot_flags,final_pay_frac,vetoed,violations
-008a81a1e28845dcab7bed7d8febd9b4,273,10,CAL|DT|GR|NPHI|PE|RHOB|RXO|SP,gr_linear,neutron_density,simandoux_rxo_fallback,2.87,True,0.0293,1.0,False,fragile_resistivity_pay,0.0293,False,
-00dda84c93a842bba5c912dcf3d7f884,235,10,CAL|DT|GR|NPHI|PE|RHOB|RT|RXO|SP,gr_linear,neutron_density,simandoux_rt,2.65,False,0.4851,0.0,False,,0.4851,False,
-01155052c34b43b096bfef59b323d70d,397,9,CAL|DT|GR|NPHI|PE|RHOB|RT|RXO|SP,gr_linear,neutron_density,simandoux_rt,2.87,False,0.5693,0.0,False,,0.5693,False,
-01cb6035729e431a9153167ad247edfc,875,11,CAL|DT|GR|NPHI|PE|RHOB|RT|RXO|SP,gr_linear,neutron_density,simandoux_rt,2.65,False,0.2469,0.0,False,,0.2469,False,
-01dc0279a4b74d0caffebb49f00286ca,731,9,CAL|DT|GR|NPHI|PE|RHOB|RT|RXO|SP,gr_linear,neutron_density,simandoux_rt,2.87,False,0.3653,0.0,False,,0.3653,False,
