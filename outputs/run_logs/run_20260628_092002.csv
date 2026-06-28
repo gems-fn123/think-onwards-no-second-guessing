@@ -1,0 +1,2 @@
+well_id,n_rows,n_curves_in,families,vsh_method,phit_method,sw_method,rho_ma,rw_value,no_deep_res,apparent_pay_frac,honeypot_score,honeypot_suspicion,is_honeypot,veto_reason,honeypot_flags,final_pay_frac,vetoed,violations
+008a81a1e28845dcab7bed7d8febd9b4,273,10,CAL|DT|GR|NPHI|PE|RHOB|RXO|SP,gr_linear,neutron_density,simandoux_rxo_fallback,2.65,0.05,True,0.0,0.0,1.0756,True,fill,,0.0,True,
