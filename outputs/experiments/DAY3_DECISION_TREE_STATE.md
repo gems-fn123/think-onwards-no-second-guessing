@@ -47,6 +47,8 @@
 | id | hp target | PAY_SW_MAX | score | notes |
 |----|-----------|------------|------:|-------|
 | PREC_400_sw035 | 400 | **0.30** | 30.13 | sw=0.30 vs H_PRECISION_400 sw=0.35 → A2-neutral |
+| PREC_500_sw030 | 500 | **0.30** | **33.12** | big win vs H_PRECISION_500=31.86; hp=500 is winning hp |
+| PREC_500_sw025 | 500 | **0.25** | _pending_ | tighter sw at hp=500 |
 
 ---
 
@@ -54,9 +56,11 @@
 
 | id | hp target | PAY_SW_MAX | status | why it's new |
 |----|-----------|------------|--------|--------------|
-| **PREC_500_sw030** | 500 | **0.30** | **ready to run** | first test of tighter sw at hp=500 |
-| PREC_400_sw025 | 400 | 0.25 | pre-registered | tighter sw at hp=400 |
-| PREC_500_sw025 | 500 | 0.25 | pre-registered | tighter sw at hp=500 |
+| PREC_500_sw030 | 500 | 0.30 | scored 33.12 | tighter sw at hp=500 beats sw=0.35 |
+| **PREC_500_sw025** | 500 | **0.25** | **pending score** | tests if even tighter sw helps |
+| CONS_500_sw025 | 500 | 0.25 | pre-registered | consolidation if sw=0.25 wins |
+| CONS_500_sw030 | 500 | 0.30 | pre-registered | consolidation if sw=0.30 wins |
+| PAY_PRESENCE_500 | 500 | — | pre-registered | architectural Move C at hp=500 |
 | CONS_400_sw035 | 400 | 0.35 | pre-registered | consolidation if sw=0.35 wins at hp=400 |
 | CONS_400_sw025 | 400 | 0.25 | pre-registered | consolidation if sw=0.25 wins at hp=400 |
 | CONS_500_sw030 | 500 | 0.30 | pre-registered | consolidation if sw=0.30 wins at hp=500 |
@@ -66,55 +70,52 @@
 
 ---
 
-## Decision tree after slot 1
+## Decision tree after slot 2 (hp=500 won; slot 3 pending)
 
 ```
 [Day-3 root: precision features merged, default sw=0.35]
             |
-    PREC_400_sw035 = 30.13
-    (duplicate of H_PRECISION_400; merge validated)
-            |
-            v
-    PREC_500_sw030 — READY TO RUN
-    hp=500, sw=0.30
-    acceptance: score > 31.86 (H_PRECISION_500)
-            |
     ┌───────┴───────┐
     v               v
-win (>31.86)    lose (≤31.86)
-    |               |
-    v               v
-PREC_500_sw025  abandon sw tightening
-(tighten to     at hp=500;
-0.25)           consider pay-presence
-    |               or A4 hunt
-    v
-CONS_500_sw0xx
+PREC_400_sw030    PREC_500_sw030 = 33.12
+= 30.13           (win vs H_PRECISION_500=31.86)
+(hp=400 loses)    |
+                   v
+            PREC_500_sw025 — PENDING
+            hp=500, sw=0.25
+                   |
+          ┌────────┴────────┐
+          v                 v
+      win (>33.12)      lose (≤33.12)
+          |                 |
+          v                 v
+      CONS_500_sw025    CONS_500_sw030
+          |                 |
+          └────────┬────────┘
+                   v
+            PAY_PRESENCE_500
+            vs slot-4 consolidation
 ```
 
 ---
 
 ## What we still don't know
 
-1. Does `PAY_SW_MAX=0.30` improve A2 at hp=500? (slot 2)
-2. Does `PAY_SW_MAX=0.25` improve A2 further at the winning hp? (slot 3)
-3. Does a pay-presence classifier beat the best (hp, sw) combination? (slot 5)
+1. Does `PAY_SW_MAX=0.25` improve A2 at hp=500? (slot 3 — pending)
+2. Which sw wins at hp=500: 0.30 or 0.25? (determines slot 4)
+3. Does a pay-presence classifier beat the slot-4 consolidation? (slot 5)
 4. Is PERM the hidden A4 floor? (day-4 slot 6)
 5. Is neutron-only PHIT better than the average? (day-4 slot 7)
 
 ---
 
-## Slot 2 command
+## Active config
 
-```bash
-cd /home/gems-fn123/think-onwards-no-second-guessing
-python3 -m src.main --honeypot-target 500
-```
-
-This generates a submission with `HONEYPOT_TARGET_COUNT=500` and the current `PAY_SW_MAX=0.35`. **To test sw=0.30, edit `src/config.py` first:**
-
+`src/config.py`:
 ```python
-PAY_SW_MAX = 0.30
+PAY_SW_MAX = 0.25
 ```
 
-*Note: PREC_500_sw030.md says to change `PAY_SW_MAX` to 0.30 before running.*
+`HONEYPOT_TARGET_COUNT=500` via `--honeypot-target 500`.
+
+Current pending submission: `outputs/submission_20260628_PREC_500_sw025.zip`
