@@ -99,6 +99,9 @@ def main(argv: List[str] | None = None) -> int:
     ap.add_argument("--pay-phie-min", type=float, default=None, help="override PAY_PHIE_MIN")
     ap.add_argument("--pay-sw-max", type=float, default=None, help="override PAY_SW_MAX")
     ap.add_argument("--pay-vsh-max", type=float, default=None, help="override PAY_VSH_MAX")
+    ap.add_argument("--perm-a", type=float, default=None, help="override PERM_A (log-linear intercept) — A4-PERM probe")
+    ap.add_argument("--perm-b", type=float, default=None, help="override PERM_B (PHIE slope) — A4-PERM probe")
+    ap.add_argument("--perm-c", type=float, default=None, help="override PERM_C (VSH slope) — A4-PERM probe")
     ap.add_argument("--pay-no-perm", action="store_true", help="drop the permeability pay criterion (match key)")
     ap.add_argument("--vsh-fixed", action="store_true", help="fixed 20/120 GAPI VSH endpoints (match key)")
     ap.add_argument("--archie-a", type=float, default=None, help="override ARCHIE_A (key=0.62)")
@@ -120,6 +123,12 @@ def main(argv: List[str] | None = None) -> int:
         config.ARCHIE_A = args.archie_a
     if args.archie_m is not None:
         config.ARCHIE_M = args.archie_m
+    if args.perm_a is not None:
+        config.PERM_A = args.perm_a
+    if args.perm_b is not None:
+        config.PERM_B = args.perm_b
+    if args.perm_c is not None:
+        config.PERM_C = args.perm_c
 
     if args.rw is not None:
         config.RW_DEFAULT = args.rw   # affects SW (Axis 4) and thus pay (Axis 2)
