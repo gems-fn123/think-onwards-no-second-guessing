@@ -102,6 +102,10 @@ def main(argv: List[str] | None = None) -> int:
     ap.add_argument("--perm-a", type=float, default=None, help="override PERM_A (log-linear intercept) — A4-PERM probe")
     ap.add_argument("--perm-b", type=float, default=None, help="override PERM_B (PHIE slope) — A4-PERM probe")
     ap.add_argument("--perm-c", type=float, default=None, help="override PERM_C (VSH slope) — A4-PERM probe")
+    ap.add_argument("--no-simandoux", action="store_true",
+                    help="use plain Archie SW (USE_SIMANDOUX=False) — matches the ttracx key exactly")
+    ap.add_argument("--matrix-quartz", action="store_true",
+                    help="force matrix density = 2.65 g/cc everywhere (FORCE_SANDSTONE_MATRIX) — matches the key's PHID")
     ap.add_argument("--pay-no-perm", action="store_true", help="drop the permeability pay criterion (match key)")
     ap.add_argument("--vsh-fixed", action="store_true", help="fixed 20/120 GAPI VSH endpoints (match key)")
     ap.add_argument("--archie-a", type=float, default=None, help="override ARCHIE_A (key=0.62)")
@@ -129,6 +133,10 @@ def main(argv: List[str] | None = None) -> int:
         config.PERM_B = args.perm_b
     if args.perm_c is not None:
         config.PERM_C = args.perm_c
+    if args.no_simandoux:
+        config.USE_SIMANDOUX = False
+    if args.matrix_quartz:
+        config.FORCE_SANDSTONE_MATRIX = True
 
     if args.rw is not None:
         config.RW_DEFAULT = args.rw   # affects SW (Axis 4) and thus pay (Axis 2)
