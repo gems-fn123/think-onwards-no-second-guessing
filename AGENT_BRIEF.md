@@ -5,11 +5,11 @@ Score data lives in `outputs/dashboard/submissions.json` (machine-readable). Thi
 the prose understanding distilled from it + all scattered docs. When you learn something
 that changes strategy, update THIS file and `submissions.json` — not a new scratch doc.
 
-- **Last updated:** 2026-06-28 (day-4 prep complete; zips built, not yet uploaded/scored)
+- **Last updated:** 2026-06-29 (day-4 — precision dead, A2-recall reframe live). **READ §16 FIRST — it supersedes §1/§5/§7.**
 - **Current best:** **34.65** — `COUNT_KNEE_hp750`
 - **Leaderboard pole:** ~39 (target 37 banked in JSON). Gap ≈ 4.3.
-- **Time left:** day-4 (29-jun) + day-5 (30-jun) = ~10 submissions.
-- **Day-4 submission candidates ready:** `PRECISION_v1_hp300/400/500` (new honeypot precision features on `main`; all validation READY).
+- **Time left:** day-4 (29-jun) + day-5 (30-jun).
+- **LIVE experiment:** `KEYX_hp250/450/550` — key-exact pay × lower veto (see §16). Decisive number: `KEYX_hp450` vs 34.65.
 - **Canonical branch:** `main` (clean detector). `day-3-and-4` carries the live scoreboard JSON but its code has a *regression* — see Branches.
 
 ---
@@ -258,3 +258,38 @@ Upload **hp400 first**. It is the cleanest test: a win proves the new features i
 | `match-key-alignment` | 2 unmerged commits | parked |
 
 The precision features live only on `day-3-and-4`/`day-2-H-precision`. Build submissions on `main` to avoid the regression. Reconcile the scoreboard JSON forward into `main` when convenient.
+
+---
+
+## 16. Day-4 REFRAME — supersedes the "precision is the only path" framing (§1, §7)
+
+Two results on 2026-06-29 flipped the strategy. Read this section first; §1/§5/§7 are historical.
+
+### 16a. Precision is DEAD
+`PRECISION_v2` curve (por_mad + GR-jerkiness features, COUNT_KNEE pay config, clean count sweep):
+- `hp400 = 30.09` (plain H3 = 29.91, +0.18) · `hp600 = 33.46` (plain H5 = 33.34, +0.12).
+- Same score-vs-count slope as plain count → caught honeypots track *count*, not ranking quality.
+- **Honeypots are not separable** by these features. All points < 34.65. Stop honeypot-precision work.
+
+### 16b. The real bottleneck — A2 recall (MEASURED, confirmed)
+Back-calc: at hp750, A1≈A3≈100, so 34.65 ⇒ A2·A4 ≈ 144 → both LOW. The cause is now measured directly (hard-veto-only runs, full 800):
+
+| pay rule | mean payfrac (all 800) | payfrac on pay-wells |
+|---|---|---|
+| **OURS** (sw0.35, per-well Rw≈0.14, Simandoux) | 0.069 | 0.097 |
+| **KEY-EXACT** (sw0.60, const Rw=0.05, Archie) | 0.268 | 0.328 |
+
+**We ship ~1/3 of the key's pay footage.** Causes: (1) `--pay-sw-max 0.35` discards the SW 0.35–0.60 band (half the key's clean-rock pay sits there; clean-rock SW p50≈0.40); (2) per-well Rw≈0.14 + Simandoux inflate SW vs the key's flat Rw=0.05 → less pay. The hp750-veto was a *crutch* masking a too-dry pay model by mass deletion.
+
+**Why this was hidden:** every prior sw/Rw test (the "sw0.35 wins / per-well Rw wins" claims in §3, §5) was run at hp700+ where the veto already zeroed the wells looser SW would help → a confounded local optimum. SW-cutoff and veto-count are antagonistic and were never decoupled. (Credit: geothermal-data-scientist agent forensics, 2026-06-29.)
+
+### 16c. Live experiment — the KEYX ladder (key-exact pay × lower veto)
+Hypothesis: key-exact pay (`--pay-sw-max 0.60 --rw 0.05 --rw-mode constant --vsh-fixed --archie-a 0.62 --archie-m 2.15 --pay-no-perm`) at a *lower* veto count recovers A2 recall on hundreds of real wells faster than it loses A3. Built `KEYX_hp250/450/550` (all READY).
+
+Anchors: `COUNT_KNEE hp750 = 34.65` (dry pay) · `KEY_PEAK hp700 = 34.02` (key-exact, high count — already LOST).
+
+**Decisive read (pending scores):**
+- KEYX **rises** as count drops (hp450 > 34.65) → reframe wins → day-5 find the knee, disable Simandoux for last footage (→~0.37), push high-30s.
+- KEYX **falls** with count (hp450 < 34.02) → false-positive precision cost (KEY_PEAK's warning) cancels the recall gain → **34.65 is the ceiling**, bank COUNT_KNEE_hp750.
+
+`KEYX_hp450` is the single number that decides day-5. Caveat: KEY_PEAK shows loose-sw key-exact loses at *high* count, so the upside is real only if low-count recall dominates — the leaderboard rules.
