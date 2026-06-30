@@ -1,0 +1,105 @@
+QUALITY build notes — 2026-06-30
+=================================
+
+Goal
+----
+Test whether ttracx Well Log Interpreter-style quality-flag signals
+(bad-hole fraction, missing-primary-curve penalty, depth-coverage gaps)
+add any honeypot-ranking value on top of the proven main detector.
+
+The hypothesis is that these signals nudge the continuous suspicion rank
+without destabilising the detector. If neither candidate beats H3=29.91
+or H4=31.50, this path is abandoned (per AGENT_BRIEF §17: the engineered
+ceiling is 34.65 at COUNT_KNEE_hp750, which remains the banked best).
+
+Changes made
+------------
+src/honeypot_detector.py — three new continuous suspicion terms added:
+
+  1. _badhole_fraction(rec)
+     - Reads CAL + BIT curves.
+     - Returns fraction of valid samples where caliper > bit_size + 2.0 in.
+     - Returns 0 when either curve is missing or fewer than 20 finite
+       co-samples are available.
+     - Weighted at 2.0 in `severity`.
+     - Boolean flag `badhole_pervasive` exposed when fraction > 0.10
+       (NOT added to hard-veto weights, per spec).
+
+  2. _missing_primary_penalty(rec)
+     - Counts PRIMARY_FAMILIES = (GR, RHOB, NPHI, RT, DT) absent from
+       rec.canonical. Returns missing_count / 5.
+     - Weighted at 1.5 in `severity`.
+     - Boolean flag `missing_primary` exposed when missing_count >= 2
+       (NOT added to hard-veto weights).
+
+  3. _depth_gap_score(rec)
+     - Reads rec.depth, computes median sample interval dz.
+     - Total gap length (diffs > 4 * dz) / total depth span.
+     - Returns 0 when fewer than 50 valid samples.
+     - Weighted at 1.0 in `severity`.
+     - Boolean flag `depth_gaps` exposed when score > 0.05
+       (NOT added to hard-veto weights).
+
+All three terms are added to `detail` dict and to `severity` only.
+The three new boolean flags are intentionally absent from
+config.HONEYPOT_FLAG_WEIGHTS, so they do NOT change the hard-veto
+threshold (HONEYPOT_SCORE_THRESHOLD = 3.0) and do NOT change which
+wells are auto-vetoed. They only enrich the continuous rank used by
+the global fill-up to --honeypot-target.
+
+What was deliberately NOT changed
+---------------------------------
+- Existing precision features (_porosity_closure_mad, _gr_jerkiness)
+  were not added in this branch (they live on day-3-and-4 only and
+  regressed at peak). The detector on main already includes the
+  population-outlier synthetic signature with weight 3.0, which is
+  left in place.
+- Proven pay cutoffs and Archie parameters unchanged.
+- Final banked COUNT_KNEE_hp750 zip untouched.
+
+Build commands run
+------------------
+  python -m src.main --honeypot-target 400 --tag QUALITY_hp400
+  python -m src.main --honeypot-target 500 --tag QUALITY_hp500
+
+Smoke test:
+  python -m src.main --honeypot-target 400 --tag QUALITY_hp400_smoke --limit 5
+
+AST validation:
+  python3 -c "import ast, sys; ast.parse(open(sys.argv[1]).read())" \
+      src/honeypot_detector.py  -> PARSE OK
+
+Validation status
+-----------------
+Both zips PASSED validation:
+
+  submission_20260630_QUALITY_hp400.zip  (38.5 MB, 800 files)
+    - Physics-gate failures: 0
+    - Round-trip failures (sampled): 0
+    - Honeypots flagged: 400 (matches --honeypot-target 400)
+
+  submission_20260630_QUALITY_hp500.zip  (38.5 MB, 800 files)
+    - Physics-gate failures: 0
+    - Round-trip failures (sampled): 0
+    - Honeypots flagged: 500 (matches --honeypot-target 500)
+
+Verdict
+-------
+READY for upload.
+
+Decision rules (per AGENT_BRIEF §15):
+- Upload hp400 first. A win (> 29.91) proves the new features improve
+  ranking. A loss (<= 29.91) means quality flags add no ranking value.
+- Then hp500. A win (> 31.50) checks whether the ranking scales.
+
+If both lose, abandon this path. The banked COUNT_KNEE_hp750 = 34.65
+remains the ceiling and final submission per §17.
+
+Files
+-----
+  /home/gems-fn123/think-onwards-no-second-guessing/src/honeypot_detector.py
+  /home/gems-fn123/think-onwards-no-second-guessing/outputs/submission_20260630_QUALITY_hp400.zip
+  /home/gems-fn123/think-onwards-no-second-guessing/outputs/submission_20260630_QUALITY_hp500.zip
+  /home/gems-fn123/think-onwards-no-second-guessing/outputs/validation_report.md
+
+Co-Authored-By: Kimchi <noreply@kimchi.dev>
