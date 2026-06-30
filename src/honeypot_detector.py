@@ -23,14 +23,12 @@ import numpy as np
 
 from . import config, curve_mapping
 from .ingest import WellRecord
+from . import metadata_detector
 from .petrophysics import PetroResult
 from .qc import QCResult
 
 # Honeypot metadata leakage signal: certain fake company names and non-standard
 # LAS DATE strings are enriched in the synthetic portion of this dataset.
-HIGH_VETO_COMPS = {"Specs and Mobility", "Lake Energy", "Kangaroo Ltd"}
-_DATE_OTHER_BUMP = 1.0
-_COMP_HIGH_BUMP = 0.5
 
 
 def _raw_oob_fraction(rec: WellRecord) -> float:
@@ -127,19 +125,6 @@ def _synthetic_signature(canonical: Dict[str, dict]) -> float:
     return 2.0 * quant + 0.5 * white
 
 
-def _metadata_signature(rec: WellRecord) -> float:
-    """
-    LAS header metadata leakage signal. Real LAS files tend to have standard
-    date formats (MM/DD/YY, YYYY-MM-DD, DD-MMM-YYYY, raw digits); synthetic
-    wells in this dataset more often carry non-standard date strings.
-    Certain fake company names are also enriched in honeypots.
-    """
-    bump = 0.0
-    try:
-        with open(rec.filepath, "r", encoding="utf-8", errors="ignore") as f:
-            header = f.read(8192)
-    except Exception:
-        return 0.0
 
     # Date format signal
     date_match = re.search(r"(?m)^DATE\.\s*([^:\n]+)", header)
@@ -226,7 +211,7 @@ def detect(
     detail["raw_oob_fraction"] = oob_frac
 
     # 10. Metadata leakage signal (LAS header date/company artifacts)
-    meta_bump = _metadata_signature(rec)
+    meta_bump = metadata_detector.metadata_score(rec)
     detail["metadata_signature"] = meta_bump
 
     # Weighted boolean score -> hard auto-veto.
