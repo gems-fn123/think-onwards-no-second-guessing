@@ -309,16 +309,18 @@ Anchors: `COUNT_KNEE hp750 = 34.65` (dry pay) · `KEY_PEAK hp700 = 34.02` (key-e
 | **exact ttracx replication** (REPL) | A4+ | hp750 = 34.3 ≈ 34.65; hp135 = **18.32** (craters) | A4 inert; **key rule does NOT self-zero honeypots** |
 | PERM (PERM_A1hi, clean detector) | A4 | 34.65 = 34.65 (perm ×10 = no change) | PERM ungraded/inert |
 | **population-outlier** (SYNTH: quantization + white-noise) | A3 | hp300 = 27.95 ≈ plain 27.91 | orthogonal — synthetic-ness ≠ honeypots |
+| **LAS metadata ranking** (META: date/company bump) | A3 | hp650 = 34.44, hp700 = 34.52 (both < 34.65) | boost +0.5 @ low count shrinks to +0.09 @ high; never beats peak |
+| **semi-supervised classifier** (38 metadata/structure feats, 135 hard-veto labels) | A3 | **5-fold CV AUC = 0.55** (≈ random) | metadata fingerprint too weak; kimi's "date AUC 0.74" was overfit — honest enrichment: non-std date 18.5% vs 16.9% baseline (noise), high-veto company 30% (1.8×, 70% false positives) |
 
 ### Why the whole field is stuck < 40 (the answer to "why nobody breaks 50")
 The ~200 honeypots are **engineered to be inseparable** from real pay:
 - They **pass correct petrophysics** — `REPL_hp135 = 18.32` proves the exact key rule keeps pay on ~65 of them (only the 135 hard-physics-violation honeypots are catchable cleanly).
-- They are **identical in cross-curve physics, exact-replicated curves, and population statistics** to real wells (precision, REPL, and SYNTH all flat).
+- They are **identical in cross-curve physics, exact-replicated curves, population statistics, AND file metadata/structure** to real wells (precision, REPL, SYNTH, META, and the AUC-0.55 classifier all flat). The metadata is deliberately non-leaky.
 
 A3 = `100·(caught/200)²` is **squared**, so a top score *requires* catching all 200. The only way to catch the inseparable ~65 is **brute coverage** (flag ~750 wells), which zeroes pay on ~550 real wells → A2 (Jaccard recall) craters. A3↑ and A2↑ are mutually exclusive → the geomean is capped at the Pareto knee ≈ **34–40 for everyone**. It is not a missed lever; it is the designed ceiling. The challenge name says it: *No Second Guessing.*
 
 ### What WOULD break it (not achievable here)
-A signal that separates the ~65 subtle honeypots from real wells. None exists in the provided data — tested curve-relationship, exact petrophysics, and population-statistics. Likely needs information the challenge deliberately withholds (true labels / external ground truth).
+A signal that separates the ~65 subtle honeypots from real wells. None exists in the provided data — **measured** across curve-relationship physics, exact petrophysics replication, population statistics, and LAS metadata/file-structure (semi-supervised classifier, CV AUC 0.55). Reproduce with `scripts/honeypot_clf_probe.py`. Likely needs information the challenge deliberately withholds (true labels / external ground truth).
 
 ### The answer key (fully reverse-engineered, for the record)
 ttracx `oil-and-gas-claude-skills` → `skills/well_log_interpreter/SKILL.md` is the *entire* key (no hidden code):
