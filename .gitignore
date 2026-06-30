@@ -224,7 +224,6 @@ data/sample_submission/
 data/processed/
 outputs/submission_las/
 # Submission zips + run logs: regenerable (rebuild via AGENT_BRIEF.md recipes), not tracked
-outputs/submission_*.zip
 outputs/run_logs/
 # Keep QC + validation report tracked
 !outputs/qc_reports/

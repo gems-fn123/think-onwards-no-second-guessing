@@ -14,6 +14,7 @@ the weighted suspicion crosses the threshold, so genuine wells are not zeroed
 
 from __future__ import annotations
 
+import re
 import warnings
 from dataclasses import dataclass, field
 from typing import Dict
@@ -24,6 +25,12 @@ from . import config, curve_mapping
 from .ingest import WellRecord
 from .petrophysics import PetroResult
 from .qc import QCResult
+
+# Honeypot metadata leakage signal: certain fake company names and non-standard
+# LAS DATE strings are enriched in the synthetic portion of this dataset.
+HIGH_VETO_COMPS = {"Specs and Mobility", "Lake Energy", "Kangaroo Ltd"}
+_DATE_OTHER_BUMP = 1.0
+_COMP_HIGH_BUMP = 0.5
 
 
 def _raw_oob_fraction(rec: WellRecord) -> float:
@@ -120,6 +127,44 @@ def _synthetic_signature(canonical: Dict[str, dict]) -> float:
     return 2.0 * quant + 0.5 * white
 
 
+def _metadata_signature(rec: WellRecord) -> float:
+    """
+    LAS header metadata leakage signal. Real LAS files tend to have standard
+    date formats (MM/DD/YY, YYYY-MM-DD, DD-MMM-YYYY, raw digits); synthetic
+    wells in this dataset more often carry non-standard date strings.
+    Certain fake company names are also enriched in honeypots.
+    """
+    bump = 0.0
+    try:
+        with open(rec.filepath, "r", encoding="utf-8", errors="ignore") as f:
+            header = f.read(8192)
+    except Exception:
+        return 0.0
+
+    # Date format signal
+    date_match = re.search(r"(?m)^DATE\.\s*([^:\n]+)", header)
+    if date_match:
+        date_val = date_match.group(1).strip().upper()
+        # Standard observed formats: MM/DD/YY, YYYY-MM-DD, DD-MMM-YYYY, 8 digits
+        is_standard = (
+            bool(re.match(r"^\d{1,2}/\d{1,2}/\d{2,4}$", date_val))
+            or bool(re.match(r"^\d{4}-\d{2}-\d{2}$", date_val))
+            or bool(re.match(r"^\d{1,2}-[A-Z]{3}-\d{4}$", date_val))
+            or bool(re.match(r"^\d{8}$", date_val))
+        )
+        if not is_standard:
+            bump += _DATE_OTHER_BUMP
+
+    # Company name signal
+    comp_match = re.search(r"(?m)^COMP\.\s*([^:\n]+)", header)
+    if comp_match:
+        comp_val = comp_match.group(1).strip()
+        if comp_val in HIGH_VETO_COMPS:
+            bump += _COMP_HIGH_BUMP
+
+    return min(bump, 1.5)
+
+
 def detect(
     rec: WellRecord,
     qc: QCResult,
@@ -180,6 +225,10 @@ def detect(
     flags["raw_oob_violations"] = oob_frac > config.HONEYPOT_OOB_FRACTION
     detail["raw_oob_fraction"] = oob_frac
 
+    # 10. Metadata leakage signal (LAS header date/company artifacts)
+    meta_bump = _metadata_signature(rec)
+    detail["metadata_signature"] = meta_bump
+
     # Weighted boolean score -> hard auto-veto.
     score = 0.0
     for name, on in flags.items():
@@ -202,6 +251,7 @@ def detect(
         + 1.0 * max(0.0, 0.60 - min_ac)          # noisy/discontinuous curves
         + 0.5 * qc.washout_fraction
         + 3.0 * synth                            # population-outlier synthetic signature
+        + 1.0 * meta_bump                        # metadata leakage (date/company)
     )
     suspicion = score + severity
 
