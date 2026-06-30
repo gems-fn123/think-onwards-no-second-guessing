@@ -12,10 +12,10 @@
       "A2 footage helps but is now SECONDARY: C3 0.062 = 24.4 (ratio 1.086), dwarfed by the A3 count lever. Footage ~peaked; the bigger pay lever is the NUMBER of paying wells, which the veto count controls.",
       "Answer key (ttracx well_log_interpreter SKILL.md): pay = Vsh<0.40 AND Sw<0.60 AND PHIE>0.06, NO PERM; Humble a=0.62/m=2.15/n=2, Rw=0.05, matrix 2.65/fluid 1.0. We KEEP our per-well Rw (beats static Rw on A2) + the key's cutoff structure; our SW cutoff is tuned for max depth-overlap, not the key's nominal 0.60."
     ],
-    "next_action": "FINAL — every lever tested & leaderboard-closed (count / precision / key-exact pay / EXACT ttracx replication / PERM / population-outlier). 34.65 = engineered ceiling; honeypots inseparable by all signals. Submit COUNT_KNEE_hp750 as final. See AGENT_BRIEF S17.",
+    "next_action": "SEALED — 34.65 final. Metadata lever exhausted (META 34.44/34.52 < 34.65). Semi-supervised honeypot classifier (38 metadata/structure feats, 135 hard-veto labels) CV AUC=0.55 -> honeypots inseparable, confirmed. Submit COUNT_KNEE_hp750. See AGENT_BRIEF S17.",
     "best_id": "COUNT_KNEE",
     "best_score": 34.65,
-    "updated": "2026-06-30 18:07"
+    "updated": "2026-06-30 21:15"
   },
   "submissions": [
     {
@@ -779,6 +779,36 @@
       "_ratio": 0.423,
       "_delta": -6.7,
       "_verdict": "loss"
+    },
+    {
+      "id": "META_hp650",
+      "label": "LAS metadata ranking (date/company bump) @ hp650 — +0.5 vs p",
+      "date": "2026-06-30",
+      "status": "scored",
+      "score": 34.44,
+      "anchor": "COUNT_KNEE",
+      "isolates": "A3",
+      "footage": null,
+      "change": "LAS metadata ranking (date/company bump) @ hp650 — +0.5 vs plain hp650 but < 34.65; signal real-but-thin",
+      "_anchor_score": 34.65,
+      "_ratio": 0.976,
+      "_delta": -0.21,
+      "_verdict": "loss"
+    },
+    {
+      "id": "META_hp700",
+      "label": "metadata ranking @ hp700 — only +0.09 vs plain (boost shrink",
+      "date": "2026-06-30",
+      "status": "scored",
+      "score": 34.52,
+      "anchor": "COUNT_KNEE",
+      "isolates": "A3",
+      "footage": null,
+      "change": "metadata ranking @ hp700 — only +0.09 vs plain (boost shrinks at high count); < 34.65. Metadata lever exhausted",
+      "_anchor_score": 34.65,
+      "_ratio": 0.985,
+      "_delta": -0.13,
+      "_verdict": "flat"
     }
   ]
 }
