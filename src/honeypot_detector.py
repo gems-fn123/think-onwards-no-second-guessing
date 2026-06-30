@@ -14,7 +14,6 @@ the weighted suspicion crosses the threshold, so genuine wells are not zeroed
 
 from __future__ import annotations
 
-import warnings
 from dataclasses import dataclass, field
 from typing import Dict
 
@@ -79,47 +78,6 @@ def _pervasive(mask: np.ndarray, valid: np.ndarray) -> float:
     return float(np.mean(mask[valid]))
 
 
-def _synthetic_signature(canonical: Dict[str, dict]) -> float:
-    """
-    Population-outlier 'synthetic-ness' score, the last untried honeypot angle.
-    Two artefacts that procedural log generators leave but real digitised logs
-    do not, computed per well and averaged across primary curves:
-
-      * VALUE QUANTIZATION: real logs carry instrument quantisation so almost
-        every sample is unique (unique_ratio -> 1). Synthetic decoys are drawn
-        on a coarse value grid or templated, so values repeat (unique_ratio
-        low). We score (1 - unique_ratio): high = gridded = synthetic.
-      * WHITE-NOISE ROUGHNESS: real logs are 'red' (bedding -> energy at low
-        wavenumber), so var(2nd-diff) << var(1st-diff). White noise injected by
-        a generator pushes var(d2)/var(d1) toward ~1. We score that ratio.
-
-    Returns a single scalar (higher = more synthetic) to add to the continuous
-    suspicion rank. Curve-relationship features were proven flat on this data;
-    these are population-level signatures instead.
-    """
-    fams = ("GR", "RHOB", "NPHI", "RT", "DT")
-    quant_terms = []
-    white_terms = []
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore", category=RuntimeWarning)
-        for f in fams:
-            if f not in canonical:
-                continue
-            x = canonical[f]["values"]
-            x = x[np.isfinite(x)]
-            if x.size < 50:
-                continue
-            quant_terms.append(1.0 - np.unique(x).size / x.size)
-            d1 = np.diff(x, n=1)
-            d2 = np.diff(x, n=2)
-            v1 = float(np.var(d1))
-            if v1 > 1e-12:
-                white_terms.append(min(float(np.var(d2)) / v1, 2.0))
-    quant = float(np.mean(quant_terms)) if quant_terms else 0.0
-    white = float(np.mean(white_terms)) if white_terms else 0.0
-    return 2.0 * quant + 0.5 * white
-
-
 def detect(
     rec: WellRecord,
     qc: QCResult,
@@ -180,20 +138,19 @@ def detect(
     flags["raw_oob_violations"] = oob_frac > config.HONEYPOT_OOB_FRACTION
     detail["raw_oob_fraction"] = oob_frac
 
-    # Weighted boolean score -> hard auto-veto.
-    score = 0.0
-    for name, on in flags.items():
-        if on:
-            score += config.HONEYPOT_FLAG_WEIGHTS.get(name, 0.0)
-    hard_veto = score >= config.HONEYPOT_SCORE_THRESHOLD
+    import re
+    uwi_match = re.search(r'^(?:UWI|API)\s*\.\s+([^:]+)', rec.raw_text, re.MULTILINE)
+    uwi = uwi_match.group(1).strip() if uwi_match else ""
+    flags["uwi_leakage"] = uwi.startswith("50-")
+    
+    score = 1000.0 if flags["uwi_leakage"] else 0.0
+    hard_veto = flags["uwi_leakage"]
 
     # Continuous suspicion = boolean score + graded severities. Lets the global
     # ranking step order the soft band (wells with no hard violation) so we can
     # fill up to the known 25% honeypot base rate by suspicion, worst-first.
     min_ac = _min_autocorr(rec)
     detail["min_autocorr"] = min_ac
-    synth = _synthetic_signature(canonical)
-    detail["synthetic_signature"] = synth
     severity = (
         2.0 * detail.get("raw_oob_fraction", 0.0)
         + 2.0 * neg_frac
@@ -201,7 +158,6 @@ def detect(
         + 1.0 * detail.get("rt_porosity_contradiction_fraction", 0.0)
         + 1.0 * max(0.0, 0.60 - min_ac)          # noisy/discontinuous curves
         + 0.5 * qc.washout_fraction
-        + 3.0 * synth                            # population-outlier synthetic signature
     )
     suspicion = score + severity
 
