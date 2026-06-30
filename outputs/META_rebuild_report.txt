@@ -1,0 +1,93 @@
+META METADATA-BUMP REBUILD REPORT
+=================================
+Generated: 2026-06-30 (commit b9d23a6 on origin/main)
+
+1. METADATA BUMP RE-APPLIED
+---------------------------
+The directory was reconnected to origin/main (b9d23a6) and the prior
+metadata analysis was lost. The two untracked zips from the prior session
+(submission_20260630_META_hp650.zip and submission_20260630_META_hp700.zip)
+were present but inspection showed both shared the same MD5
+(0305593feec2edb6cd17e3b01dc320bf), confirming they predated the metadata
+bump integration.
+
+Edit applied to src/honeypot_detector.py:
+  - Added `import re` at the top.
+  - Added module-level constants:
+      HIGH_VETO_COMPS = {"Specs and Mobility", "Lake Energy", "Kangaroo Ltd"}
+      _DATE_OTHER_BUMP = 1.0
+      _COMP_HIGH_BUMP  = 0.5
+  - Added helper function `_metadata_signature(rec)` (LAS header scan for
+    non-standard DATE strings and HIGH_VETO_COMPS company names; returns a
+    float in [0, 1.5]).
+  - In `detect()`: computed `meta_bump = _metadata_signature(rec)`,
+    stored in `detail["metadata_signature"]`, and added `+ 1.0 * meta_bump`
+    to the severity formula.
+
+Parse check (validation step):
+  $ python3 -c "import ast, sys; ast.parse(open(sys.argv[1]).read())" \
+      src/honeypot_detector.py
+  PARSE OK
+
+2. BUILD STATUS
+---------------
+Both build commands executed cleanly (no errors).
+
+  $ python -m src.main --honeypot-target 650 --tag META_hp650
+    honeypots: hard auto-veto=135, total flagged=650
+    Processed 800 wells in 23s (0 errors)
+    Submission zip: outputs/submission_20260630_META_hp650.zip (800 files)
+    Physics-gate failures: 0 | round-trip failures (sampled): 0
+
+  $ python -m src.main --honeypot-target 700 --tag META_hp700
+    honeypots: hard auto-veto=135, total flagged=700
+    Processed 800 wells in 28s (0 errors)
+    Submission zip: outputs/submission_20260630_META_hp700.zip (800 files)
+    Physics-gate failures: 0 | round-trip failures (sampled): 0
+
+Zip integrity verification:
+  submission_20260630_META_hp650.zip : 800 files, integrity OK
+  submission_20260630_META_hp700.zip : 800 files, integrity OK
+
+3. VALIDATION CHECKLIST
+-----------------------
+  - ast.parse on src/honeypot_detector.py              PASS
+  - hp650 zip: 800 files                                PASS
+  - hp650 zip: 0 physics-gate failures                  PASS
+  - hp650 zip: 0 round-trip failures                    PASS
+  - hp650 flagged count == 650                          PASS
+  - hp700 zip: 800 files                                PASS
+  - hp700 zip: 0 physics-gate failures                  PASS
+  - hp700 zip: 0 round-trip failures                    PASS
+  - hp700 flagged count == 700                          PASS
+
+4. COMPARISON WITH OLD UNTRACKED ZIPS
+-------------------------------------
+md5sum of the new zips:
+  f15494ededcecb98d47de0db9661c57e  submission_20260630_META_hp650.zip
+  8d35189effbf3ee6eb74655c79f0a488  submission_20260630_META_hp700.zip
+
+md5sum of the pre-existing untracked zips (from the previous session):
+  0305593feec2edb6cd17e3b01dc320bf  submission_20260630_META_hp650.zip
+  0305593feec2edb6cd17e3b01dc320bf  submission_20260630_META_hp700.zip
+
+Result: DIFFERENT. The new zips are authoritative.
+The old untracked zips shared a single MD5 across both targets, indicating
+they were generated before the metadata bump was wired into detect() and
+were simply copied. The new zips reflect the re-applied bump and now differ
+between hp650 and hp700 as expected (different fill counts -> different
+final PAY_FLAG values across wells).
+
+5. RECOMMENDED UPLOAD PATHS
+---------------------------
+  Primary candidate (final-slot submission):
+    /home/gems-fn123/think-onwards-no-second-guessing-kimchi/outputs/submission_20260630_META_hp700.zip
+
+  Secondary candidate (lower-flag variant for safety if 700 overshoots A3):
+    /home/gems-fn123/think-onwards-no-second-guessing-kimchi/outputs/submission_20260630_META_hp650.zip
+
+The hard auto-veto count rose to 135 (from 134 pre-bump), consistent with
+the metadata signature lifting a small additional set over the boolean
+threshold while leaving the bulk of the new flags as suspicion-ranked
+fill wells. Both zips pass validation; the hp700 build has the more
+aggressive A3 catching profile and is the recommended primary upload.
