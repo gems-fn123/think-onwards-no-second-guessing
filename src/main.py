@@ -48,11 +48,18 @@ def analyze_well(path: str, decouple_pay: bool = False) -> Dict:
             "apparent": apparent, "app_frac": app_frac}
 
 
-def select_honeypots(runs: List[Dict], target: int | None = None, veto_order: str = "suspicion") -> set:
+def select_honeypots(runs: List[Dict], target: int | None = None, veto_order: str = "suspicion",
+                     unsup_scores: dict | None = None) -> set:
     """
     Global honeypot set = all hard auto-vetoes, then filled by descending
     suspicion up to `target` (the known 25% base rate = 200). A3 is squared in
     the caught fraction, so reaching the true count is the key lever.
+
+    veto_order: "suspicion" (physics rank), "anti"/"payconf" (disambiguation
+    probes), or "unsup" — fill the soft band by an UNSUPERVISED anomaly score
+    (IsolationForest+GMM, via `unsup_scores` well_id->score). The unsup test:
+    can a multivariate model surface the physics-clean honeypots the suspicion
+    rank (≈ random past the hard 135) cannot?
     """
     hard = {j for j, r in enumerate(runs) if r["hp"].hard_veto}
     if target is None:
@@ -60,16 +67,16 @@ def select_honeypots(runs: List[Dict], target: int | None = None, veto_order: st
     target = int(target or 0)
     honey = set(hard)
     if target > len(honey):
-        if veto_order == "suspicion":
-            # Normal: sort descending by suspicion score
-            order = sorted(range(len(runs)), key=lambda j: -runs[j]["hp"].suspicion)
-        elif veto_order == "anti":
-            # Anti: sort ascending by suspicion score (least suspicious first)
+        if veto_order == "anti":
             order = sorted(range(len(runs)), key=lambda j: runs[j]["hp"].suspicion)
         elif veto_order == "payconf":
-            # Payconf: sort ascending by apparent pay fraction (weakest pay first)
             order = sorted(range(len(runs)), key=lambda j: runs[j]["app_frac"])
-            
+        elif veto_order == "unsup":
+            us = unsup_scores or {}
+            order = sorted(range(len(runs)),
+                           key=lambda j: -us.get(runs[j]["rec"].well_id, runs[j]["hp"].suspicion))
+        else:  # "suspicion"
+            order = sorted(range(len(runs)), key=lambda j: -runs[j]["hp"].suspicion)
         for j in order:
             if j not in honey:
                 honey.add(j)
@@ -87,8 +94,10 @@ def main(argv: List[str] | None = None) -> int:
     ap.add_argument("--no-zip", action="store_true", help="skip building the submission zip")
     ap.add_argument("--honeypot-target", type=int, default=None,
                     help="override config.HONEYPOT_TARGET_COUNT (0 = hard vetoes only)")
-    ap.add_argument("--veto-order", choices=["suspicion", "anti", "payconf"], default="suspicion",
-                    help="how to fill the target count: suspicion (normal), anti (least suspicious), or payconf (weakest pay)")
+    ap.add_argument("--veto-order", choices=["suspicion", "anti", "payconf", "unsup"], default="suspicion",
+                    help="how to fill the target count: suspicion (normal), anti (least suspicious), payconf (weakest pay), or unsup (unsupervised anomaly rank)")
+    ap.add_argument("--unsup-rank", default=None,
+                    help="path to unsup_scores.csv (well_id,unsup_score); forces --veto-order unsup")
     ap.add_argument("--rw", type=float, default=None,
                     help="override config.RW_DEFAULT (formation water resistivity) for SW")
     ap.add_argument("--rw-mode", choices=["constant", "per_well"], default=None,
@@ -187,9 +196,18 @@ def main(argv: List[str] | None = None) -> int:
             print(f"  analyzed {i}/{len(wells)} wells ({time.time()-t0:.0f}s)")
 
     # ---- Global honeypot selection (needs all wells ranked together) ----
-    honey, hard = select_honeypots(runs, target=args.honeypot_target, veto_order=args.veto_order)
+    unsup_scores = None
+    veto_order = args.veto_order
+    if args.unsup_rank:
+        import csv as _csv
+        with open(args.unsup_rank, encoding="utf-8") as fh:
+            unsup_scores = {r["well_id"]: float(r["unsup_score"]) for r in _csv.DictReader(fh)}
+        veto_order = "unsup"
+        print(f"  unsup ranking loaded: {len(unsup_scores)} wells from {args.unsup_rank}")
+    honey, hard = select_honeypots(runs, target=args.honeypot_target,
+                                   veto_order=veto_order, unsup_scores=unsup_scores)
     print(f"  honeypots: hard auto-veto={len(hard)}, total flagged={len(honey)} "
-          f"(target {getattr(config, 'HONEYPOT_TARGET_COUNT', 0)}, order={args.veto_order})")
+          f"(target {getattr(config, 'HONEYPOT_TARGET_COUNT', 0)}, order={veto_order})")
 
     # ---- Phase 2: finalize pay (apply veto), write, validate, log ----
     for j, r in enumerate(runs):
