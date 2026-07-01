@@ -80,7 +80,8 @@ DT_ALIASES = [
 
 # Deep resistivity (ohm.m) for Archie Rt. Deepest-reading first.
 RT_ALIASES = [
-    "RT", "ILD", "LLD", "RESD", "RD", "RILD", "RLLD", "AT90", "AHT90", "AHF90",
+    # Key priority first (ttracx SKILL.md): RT > RD > RILD > RDEEP > ILD
+    "RT", "RD", "RILD", "RDEEP", "ILD", "LLD", "RESD", "RLLD", "AT90", "AHT90", "AHF90",
     "AIT_H90", "A34H", "A28H", "A22H", "A16H", "P16H", "HDRS", "HLLD", "RLA5",
     "RLLA", "IDPH", "RAILD", "M2R9", "AHO10", "RB", "SGRD",
 ]
