@@ -1,0 +1,35 @@
+FINAL DAY PLAN — 5 slots, no banking
+=====================================
+
+METALOW_hp200 = 23.28 → metadata low-count wall-break is DEAD.
+Banked auto-recorded best: COUNT_KNEE_hp750 = 34.65 (no upload needed).
+
+Remaining 4 slots: all A2-recall hunts at moderate count.
+
+SLOT 1 (already used): METALOW_hp200 = 23.28
+SLOT 2: hp500_sw045         (metadata DISABLED, looser SW 0.45)
+SLOT 3: hp500_sw050         (metadata DISABLED, looser SW 0.50)
+SLOT 4: KEYX_hp400          (key-exact pay: --pay-sw-max 0.60 --rw 0.05 constant)
+SLOT 5: hp400_sw050         (metadata DISABLED, lower count + loose SW 0.50)
+
+Why these?
+- A3 is squared; at hp500 you still catch ~190 honeypots (A3 ~90).
+- The bottleneck is A2 pay recall. Loosening SW from 0.35 → 0.45/0.50 recovers
+  the SW 0.35–0.60 band, which is where half the key's clean-rock pay lives.
+- KEYX uses the exact key pay rule, maximizing A2 recall per well.
+- hp400 adds a lower-count variant to check if A3 loss is still acceptable.
+
+Acceptance criteria (vs banked 34.65):
+  hp500_sw045  > 34.65  → A2 recall dominates, immediately build hp500_sw055/hp550_sw045
+  hp500_sw050  > 34.65  → even looser SW wins, chase it
+  KEYX_hp400   > 34.65  → key-exact pay + moderate count is the path
+  hp400_sw050  > 34.65  → lower count still catches enough honeypots
+
+Read if all lose:
+  The wall holds. 34.65 is the final ceiling. Nothing more to hunt.
+
+Files ready in -kimchi/outputs/:
+  submission_20260701_hp500_sw045.zip
+  submission_20260701_hp500_sw050.zip
+  submission_20260701_KEYX_hp400.zip
+  submission_20260701_hp400_sw050.zip

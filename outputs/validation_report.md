@@ -8,10 +8,10 @@
 - wells_in: 800
 - wells_written: 800
 - errors: 0
-- wells_with_pay: 126
-- wells_flagged_honeypot: 650
-- mean_pay_fraction: 0.0149
-- elapsed_seconds: 35.0
+- wells_with_pay: 387
+- wells_flagged_honeypot: 400
+- mean_pay_fraction: 0.0796
+- elapsed_seconds: 29.6
 - config_posture: balanced
 
 ## Verdict: READY ✅
