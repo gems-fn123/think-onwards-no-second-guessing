@@ -48,6 +48,36 @@ def analyze_well(path: str, decouple_pay: bool = False) -> Dict:
             "apparent": apparent, "app_frac": app_frac}
 
 
+def _band_pay(pay, min_run: int, gap_fill: int):
+    """
+    Turn a noisy per-sample PAY_FLAG into clean contiguous bands (A2 fix).
+    Real net-pay zones are contiguous intervals with a minimum thickness; our
+    per-sample AND-gate produces fragmented streaks that wreck Jaccard overlap
+    and footage. Fill non-pay gaps shorter than `gap_fill` samples, then drop
+    pay runs shorter than `min_run` samples. NaN pattern preserved.
+    """
+    p = np.asarray(pay, dtype=float)
+    finite = np.isfinite(p)
+    b = (np.nan_to_num(p) > 0.5) & finite
+
+    def _runs(mask):
+        d = np.diff(np.concatenate([[0], mask.astype(int), [0]]))
+        return list(zip(np.flatnonzero(d == 1), np.flatnonzero(d == -1)))
+
+    if gap_fill > 0:
+        pr = _runs(b)
+        for (s0, e0), (s1, e1) in zip(pr, pr[1:]):
+            if s1 - e0 <= gap_fill:
+                b[e0:s1] = True
+    if min_run > 1:
+        for s, e in _runs(b):
+            if e - s < min_run:
+                b[s:e] = False
+    out = p.copy()
+    out[finite] = b[finite].astype(float)
+    return out
+
+
 def select_honeypots(runs: List[Dict], target: int | None = None, veto_order: str = "suspicion",
                      unsup_scores: dict | None = None) -> set:
     """
@@ -108,6 +138,10 @@ def main(argv: List[str] | None = None) -> int:
     ap.add_argument("--pay-phie-min", type=float, default=None, help="override PAY_PHIE_MIN")
     ap.add_argument("--pay-sw-max", type=float, default=None, help="override PAY_SW_MAX")
     ap.add_argument("--pay-vsh-max", type=float, default=None, help="override PAY_VSH_MAX")
+    ap.add_argument("--pay-min-run", type=int, default=0,
+                    help="pay-zone banding: drop pay runs shorter than N samples (0.5 ft/sample)")
+    ap.add_argument("--pay-gap-fill", type=int, default=0,
+                    help="pay-zone banding: fill non-pay gaps shorter than N samples")
     ap.add_argument("--perm-a", type=float, default=None, help="override PERM_A (log-linear intercept) — A4-PERM probe")
     ap.add_argument("--perm-b", type=float, default=None, help="override PERM_B (PHIE slope) — A4-PERM probe")
     ap.add_argument("--perm-c", type=float, default=None, help="override PERM_C (VSH slope) — A4-PERM probe")
@@ -215,6 +249,8 @@ def main(argv: List[str] | None = None) -> int:
         wid = rec.well_id
         is_hp = j in honey
         final_pay, final_frac, vetoed = pay_classifier.finalize_pay(r["apparent"], is_hp)
+        if args.pay_min_run or args.pay_gap_fill:
+            final_pay = _band_pay(final_pay, args.pay_min_run, args.pay_gap_fill)
         new_curves = {
             "VSH": petro.vsh, "PHIT": petro.phit, "PHIE": petro.phie,
             "SW": petro.sw, "PERM": petro.perm, "PAY_FLAG": final_pay,
