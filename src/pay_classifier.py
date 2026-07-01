@@ -77,17 +77,97 @@ def compute_apparent_pay(petro: PetroResult) -> tuple[np.ndarray, np.ndarray, fl
     return apparent, conf, frac
 
 
-def finalize_pay(apparent: np.ndarray, is_honeypot: bool) -> tuple[np.ndarray, float, bool]:
+def _viterbi_pay(
+    apparent: np.ndarray,
+    conf: np.ndarray,
+    p_stay: float = 0.92,
+    p_obs_correct: float = 0.85,
+) -> np.ndarray:
+    """2-state HMM Viterbi decoder for pay zones.
+
+    States: 0 = non-pay, 1 = pay.
+    Emissions use the continuous pay confidence: P(obs=pay | state=pay) is
+    boosted by confidence, P(obs=pay | state=nonpay) is suppressed.
+    Strong self-transition probability p_stay enforces contiguous zones.
+
+    This directly optimizes the A2 scoring target (coherent pay zones with
+    good Jaccard/footage overlap) rather than applying per-sample thresholds.
+    """
+    n = apparent.shape[0]
+    if n == 0:
+        return apparent.copy()
+
+    log_stay = np.log(p_stay + 1e-12)
+    log_switch = np.log(1.0 - p_stay + 1e-12)
+
+    conf_c = np.clip(conf, 1e-6, 1.0 - 1e-6)
+    # Emission log-likelihoods
+    log_emit_pay = np.log(conf_c)            # state = pay
+    log_emit_non = np.log(1.0 - conf_c)      # state = non-pay
+    # Optional: also reward agreement with apparent pay
+    agree = apparent.astype(float)
+    log_emit_pay = log_emit_pay * p_obs_correct + np.log(agree + 1e-12) * (1.0 - p_obs_correct)
+    log_emit_non = log_emit_non * p_obs_correct + np.log(1.0 - agree + 1e-12) * (1.0 - p_obs_correct)
+
+    # Viterbi forward
+    log_prob = np.full((n, 2), -np.inf, dtype=float)
+    log_prob[0, 0] = log_emit_non[0]
+    log_prob[0, 1] = log_emit_pay[0]
+    backptr = np.zeros((n, 2), dtype=int)
+
+    for t in range(1, n):
+        for s in range(2):
+            stay = log_prob[t - 1, s] + log_stay + (log_emit_pay[t] if s else log_emit_non[t])
+            switch = log_prob[t - 1, 1 - s] + log_switch + (log_emit_pay[t] if s else log_emit_non[t])
+            if stay >= switch:
+                log_prob[t, s] = stay
+                backptr[t, s] = s
+            else:
+                log_prob[t, s] = switch
+                backptr[t, s] = 1 - s
+
+    # Backtrack
+    path = np.zeros(n, dtype=np.int8)
+    path[-1] = int(np.argmax(log_prob[-1]))
+    for t in range(n - 2, -1, -1):
+        path[t] = backptr[t + 1, path[t + 1]]
+    return path
+
+
+def finalize_pay(
+    apparent: np.ndarray,
+    is_honeypot: bool,
+    hmm_decode: bool = False,
+    conf: np.ndarray | None = None,
+    hmm_stay: float = 0.92,
+    hmm_obs_correct: float = 0.85,
+) -> tuple[np.ndarray, float, bool]:
     if is_honeypot:
         final = np.zeros_like(apparent, dtype=np.int8)
         return final, 0.0, True
-    final = apparent.astype(np.int8)
+    if hmm_decode and conf is not None:
+        final = _viterbi_pay(apparent, conf, p_stay=hmm_stay, p_obs_correct=hmm_obs_correct)
+    else:
+        final = apparent.astype(np.int8)
     return final, float(np.mean(final)) if final.size else 0.0, False
 
 
-def classify(petro: PetroResult, is_honeypot: bool) -> PayResult:
+def classify(
+    petro: PetroResult,
+    is_honeypot: bool,
+    hmm_decode: bool = False,
+    hmm_stay: float = 0.92,
+    hmm_obs_correct: float = 0.85,
+) -> PayResult:
     apparent, conf, frac = compute_apparent_pay(petro)
-    final, final_frac, vetoed = finalize_pay(apparent, is_honeypot)
+    final, final_frac, vetoed = finalize_pay(
+        apparent,
+        is_honeypot,
+        hmm_decode=hmm_decode,
+        conf=conf,
+        hmm_stay=hmm_stay,
+        hmm_obs_correct=hmm_obs_correct,
+    )
     return PayResult(
         pay_flag=final,
         apparent_pay=apparent,

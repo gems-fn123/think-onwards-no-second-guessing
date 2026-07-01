@@ -45,7 +45,7 @@ def analyze_well(path: str, decouple_pay: bool = False) -> Dict:
     apparent, conf, app_frac = pay_classifier.compute_apparent_pay(petro)
     hp = honeypot_detector.detect(rec, qc, petro, app_frac)
     return {"rec": rec, "qc": qc, "petro": petro, "hp": hp,
-            "apparent": apparent, "app_frac": app_frac}
+            "apparent": apparent, "conf": conf, "app_frac": app_frac}
 
 
 def select_honeypots(runs: List[Dict], target: int | None = None, veto_order: str = "suspicion") -> set:
@@ -110,6 +110,12 @@ def main(argv: List[str] | None = None) -> int:
     ap.add_argument("--vsh-fixed", action="store_true", help="fixed 20/120 GAPI VSH endpoints (match key)")
     ap.add_argument("--archie-a", type=float, default=None, help="override ARCHIE_A (key=0.62)")
     ap.add_argument("--archie-m", type=float, default=None, help="override ARCHIE_M (key=2.15)")
+    ap.add_argument("--hmm-decode", action="store_true",
+                    help="use 2-state HMM Viterbi to smooth PAY_FLAG into contiguous zones")
+    ap.add_argument("--hmm-stay", type=float, default=0.92,
+                    help="HMM self-transition probability (higher = thicker zones)")
+    ap.add_argument("--hmm-obs-correct", type=float, default=0.85,
+                    help="HMM emission weight on confidence vs apparent pay")
     ap.add_argument("--phie-out", choices=["effective", "density", "rms"], default="effective",
                     help="A4 probe: overwrite ONLY the written PHIT/PHIE with density-only or "
                          "gas-corrected RMS porosity (pay/SW/PERM stay baseline = clean A4-PHIE read)")
@@ -196,7 +202,13 @@ def main(argv: List[str] | None = None) -> int:
         rec, qc, petro, hp = r["rec"], r["qc"], r["petro"], r["hp"]
         wid = rec.well_id
         is_hp = j in honey
-        final_pay, final_frac, vetoed = pay_classifier.finalize_pay(r["apparent"], is_hp)
+        final_pay, final_frac, vetoed = pay_classifier.finalize_pay(
+            r["apparent"], is_hp,
+            hmm_decode=args.hmm_decode,
+            conf=r.get("conf"),
+            hmm_stay=args.hmm_stay,
+            hmm_obs_correct=args.hmm_obs_correct,
+        )
         new_curves = {
             "VSH": petro.vsh, "PHIT": petro.phit, "PHIE": petro.phie,
             "SW": petro.sw, "PERM": petro.perm, "PAY_FLAG": final_pay,
