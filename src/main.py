@@ -45,7 +45,7 @@ def analyze_well(path: str, decouple_pay: bool = False) -> Dict:
     apparent, conf, app_frac = pay_classifier.compute_apparent_pay(petro)
     hp = honeypot_detector.detect(rec, qc, petro, app_frac)
     return {"rec": rec, "qc": qc, "petro": petro, "hp": hp,
-            "apparent": apparent, "app_frac": app_frac}
+            "apparent": apparent, "conf": conf, "app_frac": app_frac}
 
 
 def _band_pay(pay, min_run: int, gap_fill: int):
@@ -76,6 +76,51 @@ def _band_pay(pay, min_run: int, gap_fill: int):
     out = p.copy()
     out[finite] = b[finite].astype(float)
     return out
+
+
+def _hmm_band(conf, stick: float = 0.97, prior_pay: float = 0.15):
+    """
+    HMM/Viterbi pay-zone decoder — the principled banding.
+
+    Two hidden states {non-pay, pay}. Emission from the continuous pay
+    confidence `conf` in [0,1] (log-likelihood log c for pay, log(1-c) for
+    non-pay). Transition favors staying (self-prob `stick`), which penalizes
+    frequent switching -> contiguous bands that respect the evidence, unlike
+    hard run-length rules. Viterbi returns the MAP pay/non-pay sequence.
+    NaN samples are held non-pay and preserved as NaN in the output pattern.
+    """
+    c = np.asarray(conf, dtype=float)
+    finite = np.isfinite(c)
+    n = c.size
+    if n == 0 or finite.sum() == 0:
+        return np.where(finite, 0.0, np.nan)
+    cc = np.clip(np.where(finite, c, 0.0), 1e-4, 1.0 - 1e-4)
+    e0 = np.log(1.0 - cc)                                  # non-pay emission
+    e1 = np.log(cc)                                        # pay emission
+    stay, switch = float(np.log(stick)), float(np.log(1.0 - stick))
+
+    dp0 = float(np.log(1 - prior_pay)) + float(e0[0])
+    dp1 = float(np.log(prior_pay)) + float(e1[0])
+    b0 = np.zeros(n, dtype=np.int8)
+    b1 = np.zeros(n, dtype=np.int8)
+    for i in range(1, n):
+        # best predecessor for state 0 (non-pay)
+        if dp0 + stay >= dp1 + switch:
+            m0, b0[i] = dp0 + stay, 0
+        else:
+            m0, b0[i] = dp1 + switch, 1
+        # best predecessor for state 1 (pay)
+        if dp1 + stay >= dp0 + switch:
+            m1, b1[i] = dp1 + stay, 1
+        else:
+            m1, b1[i] = dp0 + switch, 0
+        dp0, dp1 = m0 + float(e0[i]), m1 + float(e1[i])
+    path = np.zeros(n, dtype=float)
+    s = 1 if dp1 >= dp0 else 0
+    for i in range(n - 1, -1, -1):
+        path[i] = s
+        s = int(b1[i]) if s == 1 else int(b0[i])
+    return np.where(finite, path, np.nan)
 
 
 def select_honeypots(runs: List[Dict], target: int | None = None, veto_order: str = "suspicion",
@@ -142,6 +187,10 @@ def main(argv: List[str] | None = None) -> int:
                     help="pay-zone banding: drop pay runs shorter than N samples (0.5 ft/sample)")
     ap.add_argument("--pay-gap-fill", type=int, default=0,
                     help="pay-zone banding: fill non-pay gaps shorter than N samples")
+    ap.add_argument("--pay-hmm", action="store_true",
+                    help="pay-zone banding via HMM/Viterbi decode of pay-confidence (supersedes run-length)")
+    ap.add_argument("--pay-hmm-stick", type=float, default=0.97,
+                    help="HMM self-transition prob (higher = smoother/longer bands)")
     ap.add_argument("--perm-a", type=float, default=None, help="override PERM_A (log-linear intercept) — A4-PERM probe")
     ap.add_argument("--perm-b", type=float, default=None, help="override PERM_B (PHIE slope) — A4-PERM probe")
     ap.add_argument("--perm-c", type=float, default=None, help="override PERM_C (VSH slope) — A4-PERM probe")
@@ -249,8 +298,12 @@ def main(argv: List[str] | None = None) -> int:
         wid = rec.well_id
         is_hp = j in honey
         final_pay, final_frac, vetoed = pay_classifier.finalize_pay(r["apparent"], is_hp)
-        if args.pay_min_run or args.pay_gap_fill:
-            final_pay = _band_pay(final_pay, args.pay_min_run, args.pay_gap_fill)
+        if not vetoed:
+            if args.pay_hmm:
+                final_pay = _hmm_band(r["conf"], stick=args.pay_hmm_stick)
+            elif args.pay_min_run or args.pay_gap_fill:
+                final_pay = _band_pay(final_pay, args.pay_min_run, args.pay_gap_fill)
+            final_frac = float(np.nanmean(np.nan_to_num(final_pay)))
         new_curves = {
             "VSH": petro.vsh, "PHIT": petro.phit, "PHIE": petro.phie,
             "SW": petro.sw, "PERM": petro.perm, "PAY_FLAG": final_pay,
