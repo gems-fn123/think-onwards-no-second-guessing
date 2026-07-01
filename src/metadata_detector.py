@@ -72,7 +72,7 @@ class MetadataFeatures:
 
 # Known high-veto company/service names discovered from data analysis.
 HIGH_VETO_COMPS: Set[str] = {"Specs and Mobility", "Lake Energy", "Kangaroo Ltd"}
-HIGH_VETO_SRVCS: Set[str] = set()
+HIGH_VETO_SRVCS: Set[str] = {"SQR", "Specialized Drilling"}
 
 
 def _parse_header_value(raw_text: str, key: str) -> str:
@@ -266,12 +266,14 @@ def extract_metadata_features(rec: WellRecord) -> MetadataFeatures:
 
     feat.detail = {
         "meta_date_other": float(feat.date_style == "other"),
+        "meta_date_digits8": float(feat.date_style == "digits8"),
         "meta_date_missing": float(feat.date_style == "missing"),
         "meta_comp_high": float(feat.comp in HIGH_VETO_COMPS),
         "meta_srvc_high": float(feat.srvc in HIGH_VETO_SRVCS),
         "meta_null_nonstandard": float(not feat.null_is_standard),
         "meta_primary_missing": float(feat.primary_missing),
         "meta_row_mismatch": float(feat.row_count_mismatch),
+        "meta_row_mismatch_norm": min(float(feat.row_count_mismatch) / 100.0, 1.0) if np.isfinite(feat.row_count_mismatch) else 0.0,
         "meta_mean_decimal": feat.mean_decimal_places if np.isfinite(feat.mean_decimal_places) else 0.0,
         "meta_trailing_zeros": feat.fraction_trailing_zeros if np.isfinite(feat.fraction_trailing_zeros) else 0.0,
         "meta_unique_values": feat.fraction_unique_values if np.isfinite(feat.fraction_unique_values) else 1.0,
@@ -291,12 +293,13 @@ def metadata_score(rec: WellRecord, weights: Dict[str, float] | None = None) -> 
     """Return scalar metadata-leakage suspicion score."""
     if weights is None:
         weights = {
-            "meta_date_other": 1.0,
-            "meta_comp_high": 0.5,
-            "meta_srvc_high": 0.0,
+            "meta_date_other": 0.35,
+            "meta_date_digits8": 0.45,
+            "meta_comp_high": 0.45,
+            "meta_srvc_high": 0.35,
+            "meta_row_mismatch_norm": 1.1,
             "meta_null_nonstandard": 0.0,
             "meta_primary_missing": 0.0,
-            "meta_row_mismatch": 0.0,
             "meta_mean_decimal": 0.0,
             "meta_trailing_zeros": 0.0,
             "meta_unique_values": 0.0,
@@ -307,6 +310,8 @@ def metadata_score(rec: WellRecord, weights: Dict[str, float] | None = None) -> 
             "meta_file_size_mb": 0.0,
             "meta_num_sections": 0.0,
             "meta_header_bytes_kb": 0.0,
+            "meta_row_mismatch": 0.0,
+            "meta_date_missing": 0.0,
         }
 
     feat = extract_metadata_features(rec)

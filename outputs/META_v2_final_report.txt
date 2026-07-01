@@ -1,0 +1,72 @@
+META_v2 FINAL REPORT — 2026-07-01
+==================================
+
+1. SIGNAL ANALYSIS
+------------------
+Script: experiments/analyze_metadata_signal.py
+Output: outputs/metadata_v2_analysis.json
+
+Wells analyzed: 800
+Hard auto-vetoes: 135 (baseline rate 16.9%)
+Combined metadata model AUC: 0.707
+
+Top separating numeric features:
+  meta_row_mismatch        AUC=0.6796  d=+0.91  veto_mean=44.50  real_mean=10.18
+  meta_comp_high           AUC=0.5556  d=+0.35  veto_mean=0.21   real_mean=0.10
+  meta_date_other          AUC=0.5131  d=+0.06  veto_mean=0.25   real_mean=0.23
+  meta_primary_missing     AUC=0.4843  d=-0.11  veto_mean=0.07   real_mean=0.11
+
+Top categorical lifts:
+  date_style=digits8       26.5% veto rate (lift 1.57)
+  comp=Specs and Mobility  35.5% veto rate (lift 2.10)
+  comp=Lake Energy         29.0% veto rate (lift 1.72)
+  comp=Kangaroo Ltd        26.7% veto rate (lift 1.58)
+  srvc=SQR                 28.6% veto rate (lift 1.69)
+  srvc=Specialized Drilling 22.0% veto rate (lift 1.30)
+
+2. V2 WEIGHTS APPLIED
+---------------------
+In src/metadata_detector.py default weights:
+  meta_row_mismatch_norm  1.10   (clipped to [0,1], max contribution 1.1)
+  meta_date_digits8       0.45
+  meta_date_other         0.35
+  meta_comp_high          0.45
+  meta_srvc_high          0.35
+
+HIGH_VETO_COMPS = {"Specs and Mobility", "Lake Energy", "Kangaroo Ltd"}
+HIGH_VETO_SRVCS = {"SQR", "Specialized Drilling"}
+
+Metadata contributes only to continuous suspicion ranking, not hard veto.
+
+3. BUILT CANDIDATES
+-------------------
+All zips: 800 files, 0 physics-gate failures, 0 round-trip failures.
+
+  outputs/submission_20260701_META_v2_hp750.zip  38.5 MB  md5=d929670d54f55fa96bd5e0f6064f1335
+  outputs/submission_20260701_META_v2_hp700.zip  38.5 MB  md5=f90df9e2bb11df52f559221286c5c4fb
+  outputs/submission_20260701_META_v2_hp650.zip  38.5 MB  md5=314a86d4c38334079bba4abb32d4ecce
+
+4. FINAL-DAY UPLOAD STRATEGY
+----------------------------
+Use these 3 as the first 3 of your 5 final slots:
+
+  Slot 1: META_v2_hp750   — strongest signal at the known knee (highest upside)
+  Slot 2: META_v2_hp700   — test if lower count improves A2 without losing A3
+  Slot 3: META_v2_hp650   — test low-count optimum where v1 already beat plain
+
+Acceptance:
+  META_v2_hp750 > 34.65  → signal wins, use slot 4/5 to bracket the new knee
+  META_v2_hp700 > 34.65  → new knee is around 700, explore 675/725
+  META_v2_hp650 > 34.44  → v2 improves on v1 at low count
+
+Slots 4-5 (depending on results):
+  - Bracket the winning count: hp725, hp775
+  - META_v2 + key-exact pay (--pay-sw-max 0.60) at best count to boost A2 recall
+
+5. CAVEATS
+----------
+- Signal is thin: AUC 0.71 on hard-veto labels, not perfect.
+- row_mismatch is the strongest feature; if the generator fixes depth-row
+  consistency on a private holdout, the signal may vanish.
+- Realistic ceiling from this path: ~35-36. Reaching 39 still requires a
+  near-perfect honeypot separator or a large A2 recall jump.

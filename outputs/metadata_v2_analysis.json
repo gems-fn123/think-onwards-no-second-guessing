@@ -1,0 +1,252 @@
+{
+  "n_wells": 800,
+  "baseline_veto_rate": 0.1688,
+  "hard_vetoes": 135,
+  "combined_model_auc": 0.707,
+  "top_numeric_features": [
+    {
+      "feature": "meta_row_mismatch",
+      "auc": 0.6796,
+      "cohens_d": 0.9064,
+      "veto_mean": 44.496296,
+      "real_mean": 10.17782
+    },
+    {
+      "feature": "meta_file_size_mb",
+      "auc": 0.4324,
+      "cohens_d": -0.1961,
+      "veto_mean": 0.097858,
+      "real_mean": 0.110692
+    },
+    {
+      "feature": "meta_header_bytes_kb",
+      "auc": 0.4324,
+      "cohens_d": -0.1961,
+      "veto_mean": 95.564468,
+      "real_mean": 108.097232
+    },
+    {
+      "feature": "meta_comp_high",
+      "auc": 0.5556,
+      "cohens_d": 0.351,
+      "veto_mean": 0.207407,
+      "real_mean": 0.096241
+    },
+    {
+      "feature": "meta_primary_missing",
+      "auc": 0.4843,
+      "cohens_d": -0.1069,
+      "veto_mean": 0.074074,
+      "real_mean": 0.106767
+    },
+    {
+      "feature": "meta_date_other",
+      "auc": 0.5131,
+      "cohens_d": 0.0624,
+      "veto_mean": 0.251852,
+      "real_mean": 0.225564
+    },
+    {
+      "feature": "meta_num_curves",
+      "auc": 0.4963,
+      "cohens_d": -0.0326,
+      "veto_mean": 12.6,
+      "real_mean": 12.693233
+    },
+    {
+      "feature": "meta_has_junk",
+      "auc": 0.5009,
+      "cohens_d": 0.0035,
+      "veto_mean": 0.385185,
+      "real_mean": 0.383459
+    }
+  ],
+  "categorical_features": [
+    {
+      "feature": "date_style",
+      "categories": [
+        {
+          "value": "digits8",
+          "count": 102,
+          "veto_rate": 0.2647,
+          "lift": 1.5686
+        },
+        {
+          "value": "other",
+          "count": 184,
+          "veto_rate": 0.1848,
+          "lift": 1.095
+        },
+        {
+          "value": "dash_dmy",
+          "count": 96,
+          "veto_rate": 0.1562,
+          "lift": 0.9259
+        },
+        {
+          "value": "dash_iso",
+          "count": 95,
+          "veto_rate": 0.1474,
+          "lift": 0.8733
+        },
+        {
+          "value": "slash",
+          "count": 323,
+          "veto_rate": 0.1393,
+          "lift": 0.8256
+        }
+      ]
+    },
+    {
+      "feature": "comp",
+      "categories": [
+        {
+          "value": "Specs and Mobility",
+          "count": 31,
+          "veto_rate": 0.3548,
+          "lift": 2.1027
+        },
+        {
+          "value": "Lake Energy",
+          "count": 31,
+          "veto_rate": 0.2903,
+          "lift": 1.7204
+        },
+        {
+          "value": "Kangaroo Ltd",
+          "count": 30,
+          "veto_rate": 0.2667,
+          "lift": 1.5802
+        },
+        {
+          "value": "Bivalve E&P",
+          "count": 28,
+          "veto_rate": 0.25,
+          "lift": 1.4815
+        },
+        {
+          "value": "CompletePowers",
+          "count": 29,
+          "veto_rate": 0.2414,
+          "lift": 1.4304
+        },
+        {
+          "value": "Demont Energy",
+          "count": 30,
+          "veto_rate": 0.2333,
+          "lift": 1.3827
+        },
+        {
+          "value": "Deepwell Energy Corp",
+          "count": 45,
+          "veto_rate": 0.2,
+          "lift": 1.1852
+        },
+        {
+          "value": "Rock Energy",
+          "count": 35,
+          "veto_rate": 0.2,
+          "lift": 1.1852
+        },
+        {
+          "value": "Exploration Inc.",
+          "count": 31,
+          "veto_rate": 0.1935,
+          "lift": 1.147
+        },
+        {
+          "value": "Oil Exploration",
+          "count": 29,
+          "veto_rate": 0.1724,
+          "lift": 1.0217
+        }
+      ]
+    },
+    {
+      "feature": "srvc",
+      "categories": [
+        {
+          "value": "SQR",
+          "count": 49,
+          "veto_rate": 0.2857,
+          "lift": 1.6931
+        },
+        {
+          "value": "Specialized Drilling",
+          "count": 50,
+          "veto_rate": 0.22,
+          "lift": 1.3037
+        },
+        {
+          "value": "Johns Wireline",
+          "count": 68,
+          "veto_rate": 0.2059,
+          "lift": 1.22
+        },
+        {
+          "value": "HBX",
+          "count": 54,
+          "veto_rate": 0.2037,
+          "lift": 1.2071
+        },
+        {
+          "value": "LSP",
+          "count": 50,
+          "veto_rate": 0.2,
+          "lift": 1.1852
+        },
+        {
+          "value": "Super Cool Company",
+          "count": 60,
+          "veto_rate": 0.2,
+          "lift": 1.1852
+        },
+        {
+          "value": "BaH",
+          "count": 60,
+          "veto_rate": 0.1667,
+          "lift": 0.9877
+        },
+        {
+          "value": "Tool Diagnostics",
+          "count": 57,
+          "veto_rate": 0.1579,
+          "lift": 0.9357
+        },
+        {
+          "value": "DHL",
+          "count": 52,
+          "veto_rate": 0.1538,
+          "lift": 0.9117
+        },
+        {
+          "value": "Downholeloggers",
+          "count": 59,
+          "veto_rate": 0.1525,
+          "lift": 0.904
+        }
+      ]
+    },
+    {
+      "feature": "line_ending",
+      "categories": [
+        {
+          "value": "lf",
+          "count": 800,
+          "veto_rate": 0.1688,
+          "lift": 1.0
+        }
+      ]
+    }
+  ],
+  "recommended_weights": {
+    "meta_row_mismatch": 1.0,
+    "meta_file_size_mb": -0.1321,
+    "meta_header_bytes_kb": -0.1321,
+    "meta_comp_high": 0.3922,
+    "meta_primary_missing": -0.1755,
+    "meta_date_other": 0.0778,
+    "meta_num_curves": -0.035,
+    "meta_has_junk": 0.1375
+  }
+}
